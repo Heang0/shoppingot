@@ -1,0 +1,15 @@
+node_modules
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.DS_Store
+dist
+build
+.next
+backend/uploads/
+backend/testCloudinary.js
+backend/testFetchUpload.js
+backend/dummy.png
+frontend/curl.txt

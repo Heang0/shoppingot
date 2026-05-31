@@ -1,0 +1,26 @@
+{
+  "Index": {
+    "title": "ShoppingOT",
+    "description": "Your ultimate multi-vendor e-commerce platform.",
+    "login": "Login",
+    "register": "Register",
+    "superadmin": "Superadmin",
+    "storeAdmin": "Store Admin",
+    "nav_about": "About Us",
+    "nav_services": "Services",
+    "nav_contact": "Contact",
+    "about_title": "About ShoppingOT",
+    "about_desc": "ShoppingOT is a cutting-edge SaaS platform designed to empower merchants to launch, manage, and scale their own digital storefronts seamlessly.",
+    "services_title": "Our Services",
+    "service_1_title": "Multi-Tenant Architecture",
+    "service_1_desc": "Instantly deploy dedicated storefronts for each merchant with isolated data.",
+    "service_2_title": "Fast & Secure",
+    "service_2_desc": "Built with Next.js and robust security to guarantee performance and safety.",
+    "service_3_title": "Local Payments",
+    "service_3_desc": "Integrated natively with KHQR Bakong for instant local transactions.",
+    "contact_title": "Get in Touch",
+    "contact_desc": "Have questions? Reach out to our support team and we'll help you get started.",
+    "contact_btn": "Contact Support",
+    "footer_rights": "All rights reserved."
+  }
+}
