@@ -101,4 +101,36 @@ const verifySubscriptionPayment = async (req, res) => {
   }
 };
 
-export { generateSubscriptionQR, verifySubscriptionPayment };
+// @desc    Simulate Webhook Payment (DEV ONLY)
+// @route   POST /api/subscription/simulate-pay
+// @access  Public
+const simulateSubscriptionPayment = async (req, res) => {
+  const { paymentId } = req.body;
+  try {
+    const payment = await SubscriptionPayment.findById(paymentId);
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+    
+    payment.status = 'PAID';
+    payment.paidAt = Date.now();
+    await payment.save();
+
+    const store = await Store.findById(payment.storeId);
+    const plan = await SubscriptionPlan.findById(payment.planId);
+    
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+
+    store.plan = {
+      planId: plan._id,
+      expiresAt: expiryDate,
+      isActive: true,
+    };
+    await store.save();
+
+    res.json({ message: 'Simulated payment success' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { generateSubscriptionQR, verifySubscriptionPayment, simulateSubscriptionPayment };

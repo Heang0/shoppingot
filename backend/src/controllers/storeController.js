@@ -52,11 +52,17 @@ const updatePaymentSettings = async (req, res) => {
   const { bakongId, bakongName, currency } = req.body;
 
   try {
-    const store = await Store.findById(req.params.id);
+    const store = await Store.findById(req.params.id).populate('plan.planId');
 
     if (store) {
       if (store.ownerId.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: 'Not authorized to update this store' });
+      }
+
+      // Check if store is on Free plan and restrict Bakong
+      const isFreePlan = store.plan?.planId?.name === 'Free';
+      if (bakongId && isFreePlan) {
+        return res.status(403).json({ message: 'Bakong payments are only available on Pro and Premium plans.' });
       }
 
       // Validation for Bakong ID ending with @bkrt or @wing

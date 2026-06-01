@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useTranslations } from 'next-intl';
 
 interface Product {
   _id: string;
@@ -13,6 +14,7 @@ interface Product {
 
 export default function ManageProducts() {
   const user = useAuthStore((state) => state.user);
+  const t = useTranslations('AdminProducts');
   const [products, setProducts] = useState<Product[]>([]);
   const [storeId, setStoreId] = useState<string | null>(null);
   
@@ -24,7 +26,9 @@ export default function ManageProducts() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [title, setTitle] = useState('');
+  const [titleKm, setTitleKm] = useState('');
   const [description, setDescription] = useState('');
+  const [descriptionKm, setDescriptionKm] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -93,7 +97,7 @@ export default function ManageProducts() {
 
   const handleCreateOrUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!storeId) return alert('You must set up a store first.');
+    if (!storeId) return alert(t('setup_store_first'));
 
     try {
       const parsedVariants = variants
@@ -107,7 +111,9 @@ export default function ManageProducts() {
         storeId,
         categoryId: categoryId || undefined,
         title,
+        titleKm,
         description,
+        descriptionKm,
         price: Number(price),
         stock: Number(stock),
         imageUrl,
@@ -132,7 +138,7 @@ export default function ManageProducts() {
       if (res.ok) {
         setShowForm(false);
         setEditingProduct(null);
-        setTitle(''); setDescription(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId(''); setVariants([]);
+        setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId(''); setVariants([]);
         fetchProducts(storeId, currentPage);
       } else {
         const data = await res.json();
@@ -144,7 +150,7 @@ export default function ManageProducts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm(t('confirm_delete'))) return;
     try {
       await fetch(`http://localhost:5000/api/products/${id}`, {
         method: 'DELETE',
@@ -163,7 +169,9 @@ export default function ManageProducts() {
       // let's use what we have, but ensure we have all fields.
       setEditingProduct(product);
       setTitle(product.title || '');
+      setTitleKm(product.titleKm || '');
       setDescription(product.description || '');
+      setDescriptionKm(product.descriptionKm || '');
       setPrice((product.price || 0).toString());
       setStock((product.stock || 0).toString());
       setImageUrl(product.imageUrl || '');
@@ -189,7 +197,7 @@ export default function ManageProducts() {
     if (!showForm) {
       // Clear form when opening for a new product
       setEditingProduct(null);
-      setTitle(''); setDescription(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId('');
+      setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId('');
       
       if (storeCategory === 'Clothing') {
         setVariants([
@@ -223,44 +231,48 @@ export default function ManageProducts() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Products</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('title')}</h2>
         <button 
           onClick={handleToggleForm}
           className="bg-[#E84C3D] text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-600 transition-colors"
         >
-          {showForm ? 'Cancel' : 'Add Product'}
+          {showForm ? t('cancel') : t('add_product')}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleCreateOrUpdateProduct} className="bg-white dark:bg-[#111111] p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{editingProduct ? 'Edit Product' : 'Create New Product'}</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{editingProduct ? t('edit_product') : t('create_product')}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('product_title')} (EN)</label>
               <input type="text" required value={title} onChange={e => setTitle(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price (USD)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('product_title')} (KM)</label>
+              <input type="text" value={titleKm} onChange={e => setTitleKm(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price')}</label>
               <input type="number" step="0.01" required value={price} onChange={e => setPrice(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('stock')}</label>
               <input type="number" required value={stock} onChange={e => setStock(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('custom_category')}</label>
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors">
-                <option value="">No Category</option>
+                <option value="">{t('no_category')}</option>
                 {categories.map(cat => (
                   <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image Upload</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('image_upload')}</label>
               <div className="flex gap-4 items-center">
                 <input type="file" accept="image/*" onChange={handleUpload} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 dark:file:bg-red-900/20 dark:file:text-red-400" />
                 {imageUrl && (
@@ -272,26 +284,30 @@ export default function ManageProducts() {
               </div>
             </div>
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (EN)</label>
               <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
+            </div>
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (KM)</label>
+              <textarea rows={3} value={descriptionKm} onChange={e => setDescriptionKm(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
             </div>
             
             <div className="col-span-1 md:col-span-2 border-t border-gray-100 dark:border-gray-800 pt-6 mt-2">
               <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-semibold text-gray-900 dark:text-white">Product Variants (Optional)</label>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white">{t('variants_optional')}</label>
                 <button type="button" onClick={() => setVariants([...variants, { name: '', options: '' }])} className="text-sm text-[#E84C3D] font-medium hover:text-red-600">
-                  + Add Variant
+                  {t('add_variant')}
                 </button>
               </div>
               <div className="space-y-4">
                 {variants.map((variant, index) => (
                   <div key={index} className="flex gap-4 items-start bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                     <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Variant Name (e.g. Size)</label>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('variant_name')}</label>
                       <input type="text" value={variant.name} onChange={e => { const newV = [...variants]; newV[index].name = e.target.value; setVariants(newV); }} className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#E84C3D] text-sm dark:text-white" />
                     </div>
                     <div className="flex-[2]">
-                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Options (Comma separated, e.g. S, M, L)</label>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{t('variant_options')}</label>
                       <input type="text" value={variant.options} onChange={e => { const newV = [...variants]; newV[index].options = e.target.value; setVariants(newV); }} className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#E84C3D] text-sm dark:text-white" />
                     </div>
                     <button type="button" onClick={() => { const newV = variants.filter((_, i) => i !== index); setVariants(newV); }} className="mt-6 text-gray-400 hover:text-red-500 p-2">
@@ -300,13 +316,13 @@ export default function ManageProducts() {
                   </div>
                 ))}
                 {variants.length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No variants added. Product will be sold as a single standard item.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">{t('no_variants')}</p>
                 )}
               </div>
             </div>
           </div>
           <button type="submit" className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
-            Save Product
+            {t('save_product')}
           </button>
         </form>
       )}
@@ -315,10 +331,10 @@ export default function ManageProducts() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead className="bg-gray-50 dark:bg-gray-900/50">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('product')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('price')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('stock')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -339,8 +355,8 @@ export default function ManageProducts() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{product.stock}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">Edit</button>
-                    <button onClick={() => handleDelete(product._id)} className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">Delete</button>
+                    <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">{t('edit')}</button>
+                    <button onClick={() => handleDelete(product._id)} className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">{t('delete')}</button>
                   </div>
                 </td>
               </tr>
@@ -348,7 +364,7 @@ export default function ManageProducts() {
             {products.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No products found. Create one to get started.
+                  {t('no_products')}
                 </td>
               </tr>
             )}
@@ -366,10 +382,10 @@ export default function ManageProducts() {
               disabled={currentPage === 1}
               className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
-              Previous
+              {t('previous')}
             </button>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Page <span className="font-semibold text-gray-900 dark:text-white">{currentPage}</span> of <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
+              {t('page')} <span className="font-semibold text-gray-900 dark:text-white">{currentPage}</span> {t('of')} <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
             </span>
             <button
               onClick={() => {
@@ -380,7 +396,7 @@ export default function ManageProducts() {
               disabled={currentPage === totalPages}
               className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
-              Next
+              {t('next')}
             </button>
           </div>
         )}

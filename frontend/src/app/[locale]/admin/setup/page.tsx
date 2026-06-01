@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
+import { useTranslations } from 'next-intl';
 
 export default function StoreSetup() {
   const user = useAuthStore((state) => state.user);
   const baseDomain = useBaseDomain();
+  const t = useTranslations('AdminSetup');
   
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -85,32 +87,32 @@ export default function StoreSetup() {
         });
       }
 
-      setMessage('Store setup successful!');
+      setMessage(t('success'));
     } catch (err: any) {
-      setMessage(err.message || 'Error setting up store');
+      setMessage(err.message || t('error'));
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Store Setup</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('title')}</h2>
       
       {message && (
-        <div className={`p-4 rounded-xl ${message.includes('successful') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+        <div className={`p-4 rounded-xl ${message.includes(t('success')) || message.includes('successful') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
           {message}
         </div>
       )}
 
       <form onSubmit={handleSaveStore} className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-8">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Store Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('store_details')}</h3>
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('store_name')}</label>
               <input type="text" required value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store URL Slug</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('store_url')}</label>
               <div className="flex shadow-sm rounded-lg overflow-hidden">
                 <input type="text" required value={slug} onChange={e => setSlug(e.target.value)} className="flex-1 min-w-0 w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 border-r-0 rounded-none rounded-l-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
                 <span className="inline-flex items-center px-4 rounded-r-lg border border-l-0 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
@@ -119,30 +121,30 @@ export default function StoreSetup() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('store_category')}</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors">
-                <option value="Clothing">Clothing</option>
-                <option value="Food & Beverage">Food & Beverage</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Supplements (អាហារបំប៉ន់)">Supplements (អាហារបំប៉ន់)</option>
-                <option value="General Retail">General Retail</option>
-                <option value="Other">Other</option>
+                <option value="Clothing">{t('cat_clothing')}</option>
+                <option value="Food & Beverage">{t('cat_food')}</option>
+                <option value="Electronics">{t('cat_electronics')}</option>
+                <option value="Supplements (អាហារបំប៉ន់)">{t('cat_supplements')}</option>
+                <option value="General Retail">{t('cat_general')}</option>
+                <option value="Other">{t('cat_other')}</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This helps us customize your product templates.</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('category_warning')}</p>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Settings (KHQR)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('payment_settings')}</h3>
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bakong ID</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('bakong_id')}</label>
               <input type="text" required value={bakongId} onChange={e => setBakongId(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" placeholder="example@bkrt" />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Must end with @bkrt or @wing, etc.</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('bakong_warning')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('currency')}</label>
               <select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors">
                 <option value="USD">USD</option>
                 <option value="KHR">KHR</option>
@@ -153,7 +155,7 @@ export default function StoreSetup() {
 
         <div className="pt-6">
           <button type="submit" className="w-full bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-red-600 hover:shadow-lg transition-all">
-            {existingStoreId ? 'Update Store Settings' : 'Save Store Settings'}
+            {existingStoreId ? t('update_store') : t('save_store')}
           </button>
         </div>
       </form>

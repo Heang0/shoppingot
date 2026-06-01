@@ -4,10 +4,12 @@ import {getRequestConfig} from 'next-intl/server';
 // Can be imported from a shared config
 export const locales = ['en', 'km'];
  
-export default getRequestConfig(async ({locale}) => {
+export default getRequestConfig(async ({requestLocale}) => {
+  let locale = await requestLocale;
+  
   console.log("i18n requested with locale:", locale);
   let resolvedLocale = locale;
-  if (!locales.includes(locale as any)) {
+  if (!locale || !locales.includes(locale as any)) {
     console.log("Locale not found, falling back to 'en'");
     resolvedLocale = 'en';
   }

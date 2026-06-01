@@ -6,7 +6,7 @@ import { generateKHQR, verifyKHQRTransaction } from '../services/bakongService.j
 // @route   POST /api/orders
 // @access  Private (Customer)
 const createOrderAndGenerateQR = async (req, res) => {
-  const { storeId, items, totalAmount } = req.body;
+  const { storeId, items, totalAmount, guestInfo } = req.body;
 
   try {
     const store = await Store.findById(storeId);
@@ -18,10 +18,15 @@ const createOrderAndGenerateQR = async (req, res) => {
     if (!store.paymentSettings || !store.paymentSettings.bakongId) {
       return res.status(400).json({ message: 'Store has not configured KHQR payments yet' });
     }
+    
+    const customerId = req.user ? req.user._id : null;
+    const isGuest = !customerId;
 
     const order = new Order({
       storeId,
-      customerId: req.user._id,
+      customerId,
+      isGuest,
+      guestInfo: isGuest ? guestInfo : undefined,
       items,
       totalAmount,
       paymentStatus: 'PENDING',
@@ -173,11 +178,27 @@ const updateOrderStatus = async (req, res) => {
 
     order.orderStatus = orderStatus;
     const updatedOrder = await order.save();
-
     res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus };
+// @desc    Simulate Webhook Payment (DEV ONLY)
+// @route   POST /api/orders/:id/simulate-pay
+// @access  Public
+const simulateOrderPayment = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    
+    order.paymentStatus = 'PAID';
+    await order.save();
+    
+    res.json({ message: 'Simulated payment success' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus, simulateOrderPayment };

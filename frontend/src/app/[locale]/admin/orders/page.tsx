@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useTranslations } from 'next-intl';
 
 export default function OrderTracking() {
   const user = useAuthStore((state) => state.user);
+  const t = useTranslations('AdminOrders');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -47,7 +49,7 @@ export default function OrderTracking() {
         setOrders(orders.map(order => order._id === orderId ? { ...order, orderStatus: newStatus } : order));
       } else {
         const data = await res.json();
-        alert(data.message || 'Failed to update order status');
+        alert(data.message || t('failed_update'));
       }
     } catch (err) {
       console.error(err);
@@ -56,22 +58,22 @@ export default function OrderTracking() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Order Tracking</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('title')}</h2>
 
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading orders...</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('loading')}</p>
       ) : (
         <div className="bg-white dark:bg-[#111111] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order ID</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Items</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Amount</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fulfillment Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('order_id')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('items')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('total_amount')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('payment')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('fulfillment')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('date')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -79,13 +81,13 @@ export default function OrderTracking() {
                 <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">{order._id.substring(0, 8)}...</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {order.customerId?.name || 'Guest'}
+                    {order.customerId?.name || t('guest')}
                     <div className="text-xs text-gray-500 dark:text-gray-400">{order.customerId?.email}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     {order.items.map((item: any) => (
                       <div key={item._id}>
-                        {item.quantity}x {item.productId?.title || 'Unknown Item'}
+                        {item.quantity}x {item.productId?.title || t('unknown_item')}
                       </div>
                     ))}
                   </td>
@@ -93,11 +95,11 @@ export default function OrderTracking() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {order.paymentStatus === 'PAID' ? (
                       <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50">
-                        PAID
+                        {t('status_paid')}
                       </span>
                     ) : (
                       <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800/50">
-                        {order.paymentStatus}
+                        {t('status_pending')}
                       </span>
                     )}
                   </td>
@@ -117,11 +119,11 @@ export default function OrderTracking() {
                           : 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800/50'
                       }`}
                     >
-                      <option value="PENDING">PENDING</option>
-                      <option value="PROCESSING">PROCESSING</option>
-                      <option value="SHIPPED">SHIPPED</option>
-                      <option value="DELIVERED">DELIVERED</option>
-                      <option value="CANCELLED">CANCELLED</option>
+                      <option value="PENDING">{t('status_pending')}</option>
+                      <option value="PROCESSING">{t('status_processing')}</option>
+                      <option value="SHIPPED">{t('status_shipped')}</option>
+                      <option value="DELIVERED">{t('status_delivered')}</option>
+                      <option value="CANCELLED">{t('status_cancelled')}</option>
                     </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -132,7 +134,7 @@ export default function OrderTracking() {
               {orders.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No orders found.
+                    {t('no_orders')}
                   </td>
                 </tr>
               )}
@@ -146,17 +148,17 @@ export default function OrderTracking() {
                 disabled={currentPage === 1}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
               >
-                Previous
+                {t('previous')}
               </button>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Page <span className="font-semibold text-gray-900 dark:text-white">{currentPage}</span> of <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
+                {t('page')} <span className="font-semibold text-gray-900 dark:text-white">{currentPage}</span> {t('of')} <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
               >
-                Next
+                {t('next')}
               </button>
             </div>
           )}

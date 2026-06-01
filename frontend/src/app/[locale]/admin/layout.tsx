@@ -6,6 +6,8 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
+
 export default function StoreAdminLayout({
   children,
 }: {
@@ -14,6 +16,7 @@ export default function StoreAdminLayout({
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [isHydrated, setIsHydrated] = useState(false);
+  const t = useTranslations('Dashboard');
 
   useEffect(() => {
     // Wait a brief moment to ensure Zustand has hydrated from localStorage
@@ -40,16 +43,16 @@ export default function StoreAdminLayout({
   }
 
   const sidebarItems = [
-    { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={20} /> },
-    { label: 'Categories', href: '/admin/categories', icon: <Package size={20} /> },
-    { label: 'Manage Products', href: '/admin/products', icon: <Package size={20} /> },
-    { label: 'Order Tracking', href: '/admin/orders', icon: <ShoppingCart size={20} /> },
-    { label: 'Upgrade Plan', href: '/admin/upgrade', icon: <ArrowUpCircle size={20} /> },
-    { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
+    { label: t('dashboard'), href: '/admin', icon: <LayoutDashboard size={20} /> },
+    { label: t('categories'), href: '/admin/categories', icon: <Package size={20} /> },
+    { label: t('manage_products'), href: '/admin/products', icon: <Package size={20} /> },
+    { label: t('order_tracking'), href: '/admin/orders', icon: <ShoppingCart size={20} /> },
+    { label: t('upgrade_plan'), href: '/admin/upgrade', icon: <ArrowUpCircle size={20} /> },
+    { label: t('settings'), href: '/admin/settings', icon: <Settings size={20} /> },
   ];
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems} title="Merchant Panel">
+    <DashboardLayout sidebarItems={sidebarItems} title={t('merchant_panel')}>
       {children}
     </DashboardLayout>
   );

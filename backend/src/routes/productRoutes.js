@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getProductsByStore,
+  getProductByIdOrSlug,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -16,6 +17,7 @@ router.route('/store/:storeId')
   .get(getProductsByStore);
 
 router.route('/:id')
+  .get(getProductByIdOrSlug)
   .put(protect, updateProduct)
   .delete(protect, deleteProduct);
 

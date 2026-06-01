@@ -28,7 +28,7 @@ export const getCategoriesForStore = async (req, res) => {
 // Create a category
 export const createCategory = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, nameKm } = req.body;
     console.log("CREATE CATEGORY CALLED:", name, "BY USER:", req.user._id);
     
     const store = await Store.findOne({ ownerId: req.user._id });
@@ -54,6 +54,7 @@ export const createCategory = async (req, res) => {
 
     const category = new Category({
       name,
+      nameKm,
       slug,
       storeId: store._id,
     });
@@ -69,7 +70,7 @@ export const createCategory = async (req, res) => {
 // Update a category
 export const updateCategory = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, nameKm } = req.body;
     
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -93,6 +94,7 @@ export const updateCategory = async (req, res) => {
     }
 
     category.name = name;
+    if (nameKm !== undefined) category.nameKm = nameKm;
     category.slug = newSlug;
     const updatedCategory = await category.save();
     

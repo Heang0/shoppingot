@@ -1,5 +1,16 @@
 import Product from '../models/Product.js';
 import Store from '../models/Store.js';
+import mongoose from 'mongoose';
+
+const generateUniqueSlug = async (title, ProductModel) => {
+  let baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  if (!baseSlug) baseSlug = 'product';
+  let slug = baseSlug;
+  while (await ProductModel.findOne({ slug })) {
+    slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+  }
+  return slug;
+};
 
 // @desc    Get all products for a specific store
 // @route   GET /api/products/store/:storeId
@@ -28,11 +39,38 @@ const getProductsByStore = async (req, res) => {
   }
 };
 
+// @desc    Get product by ID or Slug
+// @route   GET /api/products/:id
+// @access  Public
+const getProductByIdOrSlug = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let product;
+
+    if (mongoose.isValidObjectId(id)) {
+      product = await Product.findById(id);
+    }
+    
+    // If not found by ID, try finding by slug
+    if (!product) {
+      product = await Product.findOne({ slug: id });
+    }
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private (Store Admin)
 const createProduct = async (req, res) => {
-  const { storeId, title, description, price, imageUrl, stock, variants } = req.body;
+  const { storeId, title, titleKm, description, descriptionKm, price, imageUrl, stock, variants, categoryId } = req.body;
 
   try {
     const store = await Store.findById(storeId);
@@ -45,14 +83,20 @@ const createProduct = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to add products to this store' });
     }
 
+    const slug = await generateUniqueSlug(title, Product);
+
     const product = new Product({
       storeId,
       title,
+      titleKm,
+      slug,
       description,
+      descriptionKm,
       price,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=500&q=80', // Default mock image
       stock: stock || 0,
       variants: variants || [],
+      category: categoryId || undefined,
     });
 
     const createdProduct = await product.save();
@@ -76,6 +120,10 @@ const updateProduct = async (req, res) => {
     const store = await Store.findById(product.storeId);
     if (store.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this product' });
+    }
+
+    if (req.body.title && req.body.title !== product.title) {
+      req.body.slug = await generateUniqueSlug(req.body.title, Product);
     }
 
     Object.assign(product, req.body);
@@ -109,4 +157,4 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-export { getProductsByStore, createProduct, updateProduct, deleteProduct };
+export { getProductsByStore, getProductByIdOrSlug, createProduct, updateProduct, deleteProduct };

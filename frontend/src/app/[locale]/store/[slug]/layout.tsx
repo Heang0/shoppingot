@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import StoreHeader from '@/components/store/StoreHeader';
+import StoreBottomNav from '@/components/store/StoreBottomNav';
+import StoreTopNav from '@/components/store/StoreTopNav';
 
 async function getStore(slug: string) {
   const res = await fetch(`http://localhost:5000/api/stores/${slug}`, { next: { revalidate: 60 } });
@@ -30,18 +30,18 @@ export default async function StorefrontLayout({
   const primaryColor = store.branding?.primaryColor || '#E84C3D';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <StoreHeader store={store} locale={locale} primaryColor={primaryColor} />
+    <div className="min-h-screen bg-white dark:bg-[#111111] flex flex-col relative w-full selection:bg-black/10 dark:selection:bg-white/10">
+      
+      {/* Sleek App Top Bar */}
+      <StoreTopNav storeName={store.name} storeLogo={store.branding?.logoUrl} primaryColor={primaryColor} slug={slug} locale={locale} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      {/* Content Area */}
+      <main className="flex-1 w-full bg-white dark:bg-black pb-20 md:pb-0">
         {children}
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
-          Powered by <Link href="/" className="font-semibold text-gray-900">ShoppingOT</Link>
-        </div>
-      </footer>
+      {/* Bottom Navigation (Mobile Only) */}
+      <StoreBottomNav locale={locale} primaryColor={primaryColor} slug={slug} />
     </div>
   );
 }

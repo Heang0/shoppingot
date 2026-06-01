@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
-import { QRCodeSVG } from 'qrcode.react';
+import { useTranslations } from 'next-intl';
+import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
 
 interface Plan {
   _id: string;
@@ -12,13 +13,16 @@ interface Plan {
 
 export default function UpgradePlan() {
   const user = useAuthStore((state) => state.user);
+  const t = useTranslations('AdminUpgrade');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Need storeId. Assuming we fetch it or it's stored. 
   // For demo, we assume the user has 1 store and we get it first.
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [qrData, setQrData] = useState<{ qrString: string; md5: string; paymentId: string } | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID' | 'FAILED'>('PENDING');
 
@@ -40,7 +44,12 @@ export default function UpgradePlan() {
       const storesData = await storesRes.json();
       // find store belonging to this user
       const myStore = storesData.find((s: any) => s.ownerId._id === user?._id || s.ownerId === user?._id);
-      if (myStore) setStoreId(myStore._id);
+      if (myStore) {
+        setStoreId(myStore._id);
+        if (myStore.plan && myStore.plan.planId) {
+          setCurrentPlanId(myStore.plan.planId._id || myStore.plan.planId);
+        }
+      }
       
     } catch (err) {
       console.error(err);
@@ -51,7 +60,7 @@ export default function UpgradePlan() {
 
   const handleUpgrade = async (planId: string) => {
     if (!storeId) {
-      alert("You need to setup a store first.");
+      alert(t('setup_store_first'));
       return;
     }
 
@@ -69,6 +78,7 @@ export default function UpgradePlan() {
       if (!res.ok) throw new Error(data.message);
 
       setQrData(data);
+      setSelectedPlanId(planId);
       setPaymentStatus('PENDING');
       
       // Start polling
@@ -111,80 +121,119 @@ export default function UpgradePlan() {
     }, 300000); 
   };
 
+  const handleSimulatePay = async () => {
+    if (!qrData?.paymentId) return;
+    try {
+      await fetch(`http://localhost:5000/api/subscription/simulate-pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: qrData.paymentId }),
+      });
+      // The polling loop will automatically pick up the PAID status on its next tick!
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Upgrade Your Plan</h2>
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('title')}</h2>
 
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading plans...</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('loading')}</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div key={plan._id} className="bg-white dark:bg-[#111111] p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col hover:border-red-200 dark:hover:border-red-900/50 transition-colors">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center justify-between">
+                {plan.name}
+                {currentPlanId === plan._id && (
+                  <span className="text-xs bg-[#E84C3D]/10 text-[#E84C3D] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Current Plan</span>
+                )}
+              </h3>
               <div className="mt-4 flex items-baseline text-4xl font-extrabold text-gray-900 dark:text-white">
                 ${plan.price}
               </div>
               <ul className="mt-6 space-y-4 flex-1 text-gray-600 dark:text-gray-400">
                 <li className="flex items-center">
                   <span className="text-green-500 dark:text-green-400 mr-3 font-bold">✓</span>
-                  Access to all basic features
+                  {t('features')}
                 </li>
               </ul>
               <button
                 onClick={() => handleUpgrade(plan._id)}
-                className="mt-8 block w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-semibold py-3 px-4 rounded-lg text-center transition-colors shadow-sm"
+                disabled={currentPlanId === plan._id}
+                className={`mt-8 block w-full font-semibold py-3 px-4 rounded-lg text-center transition-colors shadow-sm ${
+                  currentPlanId === plan._id 
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
+                }`}
               >
-                Upgrade with KHQR
+                {currentPlanId === plan._id ? 'Active' : t('upgrade_button')}
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* QR Modal Overlay */}
-      {qrData && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border border-gray-100 dark:border-gray-800">
-            {paymentStatus === 'PAID' ? (
-              <div>
-                <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-green-500 dark:text-green-400 text-4xl">✓</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8">Your store plan has been upgraded.</p>
-                <button onClick={() => setQrData(null)} className="w-full bg-[#E84C3D] text-white py-3 rounded-xl font-semibold shadow-md hover:bg-red-600 transition-colors">
-                  Close
-                </button>
+      {/* Payment Method Section (Modern, non-brutalist styling) */}
+      {!loading && (
+        <div className="mt-12 max-w-2xl mx-auto border-t border-gray-100 dark:border-gray-800 pt-10">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">វិធីសាស្ត្រទូទាត់</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">វិធីសាស្ត្រដែលត្រូវបានទទួលយក</p>
+          </div>
+
+          <div className="bg-white dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 md:p-5 shadow-sm transition-all cursor-pointer relative overflow-hidden flex items-center justify-between group hover:border-[#E1232E]/30 hover:shadow-md">
+            
+            <div className="flex items-center gap-5">
+              {/* Logo Box */}
+              <div className="w-12 h-12 rounded-xl bg-[#E1232E] flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                <img 
+                  src="/logo/KHQR Logo.png" 
+                  alt="KHQR" 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    // Fallback if image not found
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-white font-bold text-xs">KHQR</span>';
+                  }}
+                />
               </div>
-            ) : paymentStatus === 'FAILED' ? (
-               <div>
-                <h3 className="text-xl font-bold text-red-600 dark:text-red-500 mb-2">Payment Timeout</h3>
-                <button onClick={() => setQrData(null)} className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white py-3 rounded-xl font-semibold mt-4 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                  Close
-                </button>
+
+              {/* Text Content */}
+              <div className="flex flex-col">
+                <span className="text-[#E1232E] text-[10px] uppercase font-bold tracking-wider mb-0.5">KHQR</span>
+                <span className="text-gray-900 dark:text-white font-bold uppercase text-sm md:text-base">Bakong KHQR</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs md:text-sm mt-0.5">ការទូទាត់តាម Bakong</span>
               </div>
-            ) : (
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Scan to Pay with Bakong</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Open your banking app and scan the KHQR code below.</p>
-                <div className="bg-white p-4 rounded-2xl inline-block shadow-md border border-gray-100 mb-8">
-                  <QRCodeSVG value={qrData.qrString} size={200} />
-                </div>
-                <div className="flex items-center justify-center text-sm font-medium text-[#E84C3D] mb-8">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#E84C3D]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Waiting for payment...
-                </div>
-                <button onClick={() => setQrData(null)} className="w-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white py-2 font-medium transition-colors">
-                  Cancel
-                </button>
-              </div>
-            )}
+            </div>
+
+            {/* Selected Indicator */}
+            <div className="w-6 h-6 rounded-full bg-[#E1232E] flex items-center justify-center shrink-0 shadow-sm mr-2">
+              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            {/* Subtle border effect on selected */}
+            <div className="absolute inset-0 border-2 border-[#E1232E] rounded-2xl pointer-events-none opacity-100"></div>
           </div>
         </div>
+      )}
+
+      {/* QR Modal Overlay via BakongKHQRModal component */}
+      {qrData && selectedPlanId && (
+        <BakongKHQRModal
+          qrString={qrData.qrString}
+          amount={plans.find(p => p._id === selectedPlanId)?.price || 0}
+          currency="USD"
+          merchantName="ShoppingOT Superadmin"
+          isPaid={paymentStatus === 'PAID'}
+          onClose={() => { setQrData(null); setSelectedPlanId(null); }}
+          onSuccessClose={() => { setQrData(null); setSelectedPlanId(null); window.location.reload(); }}
+          onSimulatePay={handleSimulatePay}
+        />
       )}
     </div>
   );

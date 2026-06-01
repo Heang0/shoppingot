@@ -1,32 +1,80 @@
-import crypto from 'crypto';
-
-// This is a mocked Bakong service. In production, these will call the NBC Bakong API directly.
-// POST https://api-bakong.nbc.gov.kh/v1/generate_qr
-// POST https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5
-
-const generateMD5Hash = (data) => {
-  return crypto.createHash('md5').update(data).digest('hex');
-};
+import { BakongKHQR, MerchantInfo, khqrData } from 'bakong-khqr';
 
 export const generateKHQR = async (bakongId, amount, currency, orderId) => {
-  // MOCK: Generate a fake MD5 and fake QR string
-  const md5Str = `${bakongId}-${amount}-${currency}-${orderId}-${Date.now()}`;
-  const md5Hash = generateMD5Hash(md5Str);
-  const qrString = `khqr://mock?id=${bakongId}&amount=${amount}&currency=${currency}&md5=${md5Hash}`;
+  try {
+    const khqr = new BakongKHQR();
 
-  return {
-    md5: md5Hash,
-    qrString,
-  };
+    // Resolve currency enum
+    const curEnum = currency?.toUpperCase() === 'KHR' ? khqrData.currency.khr : khqrData.currency.usd;
+
+    // Create MerchantInfo
+    const info = new MerchantInfo(
+      bakongId,
+      'ShoppingOT Merchant', // Default name if not available
+      'Phnom Penh',          // Default city
+      Number(amount),
+      curEnum,
+      'Store',               // storeLabel
+      'Checkout',            // terminalLabel
+      orderId.toString()     // billNumber / purpose
+    );
+
+    const response = khqr.generateMerchant(info);
+
+    if (response.status.code !== 0) {
+      throw new Error('Failed to generate KHQR');
+    }
+
+    return {
+      md5: response.data.md5,
+      qrString: response.data.qr,
+    };
+  } catch (err) {
+    console.error('KHQR Generation Error:', err);
+    throw err;
+  }
 };
 
 export const verifyKHQRTransaction = async (md5Hash) => {
-  // MOCK: Simulate a 50% chance the transaction is paid if checked after some time
-  // In reality, this would hit the Bakong check_transaction_by_md5 endpoint.
-  const isPaid = Math.random() > 0.5;
+  const isMock = process.env.BAKONG_MOCK === 'true';
 
-  return {
-    status: isPaid ? 0 : 1, // 0 = SUCCESS, 1 = PENDING/FAILED
-    message: isPaid ? 'Transaction Successful' : 'Transaction Pending',
-  };
+  if (isMock) {
+    return {
+      status: 1, // 1 = PENDING (simulated wait)
+      message: 'Transaction Pending (Mock)',
+    };
+  }
+
+  const token = process.env.BAKONG_RELAY_TOKEN;
+  if (!token) {
+    console.error('BAKONG_RELAY_TOKEN missing');
+    return { status: 1, message: 'Missing Token' };
+  }
+
+  try {
+    const res = await fetch('https://api.bakongrelay.com/v1/check_transaction_by_md5', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ md5: md5Hash })
+    });
+
+    const data = await res.json();
+
+    if (res.status === 401 || (data.responseCode === 1 && data.responseMessage?.includes('Unauthorized'))) {
+      console.error('BAKONG_TOKEN_INVALID');
+      return { status: 1, message: 'Invalid Token' };
+    }
+
+    if (data.responseCode === 0) {
+      return { status: 0, message: 'Transaction Successful' };
+    }
+
+    return { status: 1, message: 'Transaction Pending' };
+  } catch (err) {
+    console.error('[BAKONG] API Error:', err);
+    return { status: 1, message: 'API Error' };
+  }
 };

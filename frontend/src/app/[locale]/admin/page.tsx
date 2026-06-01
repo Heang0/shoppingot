@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { Package, ShoppingCart, DollarSign, TrendingUp, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
+  const t = useTranslations('AdminDashboard');
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,9 +36,9 @@ export default function AdminDashboard() {
     <div className="space-y-8 max-w-6xl mx-auto">
       <div className="bg-white dark:bg-[#111111] rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard Overview</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('overview_title')}</h2>
           <p className="text-gray-500 dark:text-gray-400">
-            Welcome back, {user?.name || 'Merchant'}. Here is what's happening with your store today.
+            {t('welcome_back', { name: user?.name || t('guest') })}
           </p>
         </div>
         <Link href="/admin/settings" className="p-3 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -45,7 +47,7 @@ export default function AdminDashboard() {
       </div>
 
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading analytics...</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('loading_analytics')}</p>
       ) : analytics ? (
         <>
           {/* Metric Cards */}
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
                 </div>
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Revenue</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{t('total_revenue')}</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">${(analytics.totalRevenue || 0).toFixed(2)}</p>
             </div>
 
@@ -67,7 +69,7 @@ export default function AdminDashboard() {
                   <ShoppingCart className="w-6 h-6" />
                 </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Orders</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{t('total_orders')}</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{analytics.totalOrders || 0}</p>
             </div>
 
@@ -77,7 +79,7 @@ export default function AdminDashboard() {
                   <Package className="w-6 h-6" />
                 </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Products</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{t('total_products')}</h3>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{analytics.totalProducts || 0}</p>
             </div>
           </div>
@@ -85,17 +87,17 @@ export default function AdminDashboard() {
           {/* Recent Orders Table */}
           <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Orders</h3>
-              <Link href="/admin/orders" className="text-sm font-medium text-[#E84C3D] hover:text-red-600 transition-colors">View All &rarr;</Link>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('recent_orders')}</h3>
+              <Link href="/admin/orders" className="text-sm font-medium text-[#E84C3D] hover:text-red-600 transition-colors">{t('view_all')} &rarr;</Link>
             </div>
             <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fulfillment</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('order_id')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('amount')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('payment')}</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('fulfillment')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -106,9 +108,9 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">${order.totalAmount.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {order.paymentStatus === 'PAID' ? (
-                        <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">PAID</span>
+                        <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">{t('status_paid')}</span>
                       ) : (
-                        <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">{order.paymentStatus}</span>
+                        <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">{t('status_pending')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -123,7 +125,11 @@ export default function AdminDashboard() {
                             ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                             : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
                         }`}>
-                          {order.orderStatus || 'PENDING'}
+                          {order.orderStatus === 'DELIVERED' ? t('status_delivered') 
+                            : order.orderStatus === 'SHIPPED' ? t('status_shipped')
+                            : order.orderStatus === 'PROCESSING' ? t('status_processing')
+                            : order.orderStatus === 'CANCELLED' ? t('status_cancelled')
+                            : t('status_pending')}
                         </span>
                     </td>
                   </tr>
@@ -131,7 +137,7 @@ export default function AdminDashboard() {
                 {(!analytics.recentOrders || analytics.recentOrders.length === 0) && (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                      No recent orders.
+                      {t('no_recent_orders')}
                     </td>
                   </tr>
                 )}
@@ -140,7 +146,7 @@ export default function AdminDashboard() {
           </div>
         </>
       ) : (
-        <p className="text-red-500">Failed to load analytics.</p>
+        <p className="text-red-500">{t('failed_analytics')}</p>
       )}
     </div>
   );

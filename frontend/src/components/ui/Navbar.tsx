@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Moon, Sun, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -15,10 +15,21 @@ export function Navbar() {
 
   useEffect(() => setMounted(true), []);
 
+  const locale = useLocale();
+
   const toggleLanguage = () => {
     if (!pathname) return "/en";
-    const newLocale = pathname.startsWith("/en") ? "km" : "en";
-    const currentPath = pathname.replace(/^\/(en|km)/, "");
+    const newLocale = locale === "en" ? "km" : "en";
+    
+    let currentPath = pathname;
+    if (currentPath.startsWith(`/${locale}`)) {
+      currentPath = currentPath.replace(`/${locale}`, "");
+    }
+    
+    if (!currentPath.startsWith('/')) {
+      currentPath = '/' + currentPath;
+    }
+
     return `/${newLocale}${currentPath}`;
   };
 
@@ -54,11 +65,11 @@ export function Navbar() {
 
             <Link
               href={toggleLanguage()}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors flex items-center gap-2"
+              className="p-1 rounded-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 shadow-sm"
               title="Toggle Language"
             >
-              <Globe size={20} />
-              <span className="text-xs font-medium uppercase">{pathname.startsWith("/en") ? "KH" : "EN"}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={locale === 'en' ? 'https://flagcdn.com/w40/us.png' : 'https://flagcdn.com/w40/kh.png'} alt={locale} className="w-6 h-auto rounded-sm" />
             </Link>
 
             <Link

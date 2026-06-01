@@ -24,6 +24,8 @@ const storage = new CloudinaryStorage({
     // Check type from query params
     if (req.query.type === 'profile' || req.query.type === 'storeLogo') {
       transformation = [{ width: 400, crop: 'limit' }, { quality: 'auto', fetch_format: 'auto' }];
+    } else if (req.query.type === 'banner') {
+      transformation = [{ width: 1200, crop: 'limit' }, { quality: 'auto', fetch_format: 'webp' }];
     }
 
     return {

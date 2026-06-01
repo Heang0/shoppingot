@@ -25,18 +25,24 @@ export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.token && user?.role === 'store_admin') {
-      fetch('http://localhost:5000/api/stores', {
-        headers: { Authorization: `Bearer ${user.token}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        const myStore = data.find((s: any) => s.ownerId?._id === user._id || s.ownerId === user._id);
-        if (myStore?.branding?.logoUrl) {
-          setStoreLogo(myStore.branding.logoUrl);
-        }
-      }).catch(console.error);
-    }
+    const fetchStoreLogo = () => {
+      if (user?.token && user?.role === 'store_admin') {
+        fetch('http://localhost:5000/api/stores', {
+          headers: { Authorization: `Bearer ${user.token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          const myStore = data.find((s: any) => s.ownerId?._id === user._id || s.ownerId === user._id);
+          if (myStore?.branding?.logoUrl) {
+            setStoreLogo(myStore.branding.logoUrl);
+          }
+        }).catch(console.error);
+      }
+    };
+
+    fetchStoreLogo();
+    window.addEventListener('storeUpdated', fetchStoreLogo);
+    return () => window.removeEventListener('storeUpdated', fetchStoreLogo);
   }, [user]);
 
   return (

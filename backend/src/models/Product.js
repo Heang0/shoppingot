@@ -15,7 +15,18 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    titleKm: {
+      type: String,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     description: {
+      type: String,
+    },
+    descriptionKm: {
       type: String,
     },
     price: {

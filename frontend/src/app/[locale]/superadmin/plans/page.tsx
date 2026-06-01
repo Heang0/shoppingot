@@ -112,12 +112,6 @@ export default function PlansManagement() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Plans</h2>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="bg-[#E84C3D] text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-600 transition-colors"
-        >
-          Create New Plan
-        </button>
       </div>
 
       {loading ? (
@@ -142,8 +136,7 @@ export default function PlansManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{plan.durationDays} Days</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{plan.maxProducts} Products</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onClick={() => handleOpenModal(plan)} className="text-gray-600 dark:text-gray-400 hover:text-[#E84C3D] mr-4 transition-colors">Edit</button>
-                    <button onClick={() => handleDelete(plan._id)} className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors">Delete</button>
+                    <button onClick={() => handleOpenModal(plan)} className="text-gray-600 dark:text-gray-400 hover:text-[#E84C3D] mr-4 transition-colors">Edit Price</button>
                   </td>
                 </tr>
               ))}
@@ -164,7 +157,7 @@ export default function PlansManagement() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 max-w-md w-full border border-gray-100 dark:border-gray-800">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {editingPlan ? 'Edit Plan' : 'Create New Plan'}
+              Edit Plan Price
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -173,8 +166,8 @@ export default function PlansManagement() {
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:ring-2 focus:ring-[#E84C3D] outline-none cursor-not-allowed"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -186,7 +179,8 @@ export default function PlansManagement() {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                    disabled={formData.name === 'Free'}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -195,8 +189,8 @@ export default function PlansManagement() {
                     type="number"
                     required
                     value={formData.durationDays}
-                    onChange={(e) => setFormData({ ...formData, durationDays: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                    disabled
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:ring-2 focus:ring-[#E84C3D] outline-none cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -206,8 +200,8 @@ export default function PlansManagement() {
                   type="number"
                   required
                   value={formData.maxProducts}
-                  onChange={(e) => setFormData({ ...formData, maxProducts: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 focus:ring-2 focus:ring-[#E84C3D] outline-none cursor-not-allowed"
                 />
               </div>
               
@@ -223,7 +217,7 @@ export default function PlansManagement() {
                   type="submit"
                   className="px-5 py-2 bg-[#E84C3D] text-white rounded-lg font-medium hover:bg-red-600 transition-colors shadow-sm"
                 >
-                  {editingPlan ? 'Save Changes' : 'Create Plan'}
+                  Save Changes
                 </button>
               </div>
             </form>

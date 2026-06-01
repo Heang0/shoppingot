@@ -13,7 +13,7 @@ const storeSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['Clothing', 'Food & Beverage', 'Electronics', 'General Retail', 'Other', 'Supplements (អាហារបំប៉ន់)'],
+      enum: ['Clothing', 'Food & Beverage', 'Electronics', 'General Retail', 'Other', 'Supplements'],
       default: 'General Retail',
     },
     ownerId: {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
 import { User, Store as StoreIcon, Copy, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Store {
   _id: string;
@@ -21,10 +22,24 @@ interface Store {
   };
 }
 
+function AdminToast({ message, visible }: { message: string; visible: boolean }) {
+  return (
+    <div
+      className={`fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-max md:max-w-sm z-[200] flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium transition-all duration-300 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3 pointer-events-none'
+      }`}
+    >
+      <Check size={16} strokeWidth={2.5} className="shrink-0" />
+      <span className="truncate">{message}</span>
+    </div>
+  );
+}
+
 export default function AdminSettings() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const baseDomain = useBaseDomain();
+  const t = useTranslations('AdminSettings');
   
   const [activeTab, setActiveTab] = useState<'profile' | 'store'>('profile');
   
@@ -100,7 +115,7 @@ export default function AdminSettings() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccessMsg('Profile updated successfully!');
+        setSuccessMsg(t('profile_success'));
         setUser({ ...user, ...data, token: user?.token } as any);
         setProfileUploaded(false);
         setTimeout(() => setSuccessMsg(''), 3000);
@@ -147,8 +162,10 @@ export default function AdminSettings() {
           })
         });
 
-        setSuccessMsg('Store settings updated successfully!');
+        setSuccessMsg(t('store_success'));
         setLogoUploaded(false);
+        // Dispatch custom event to update Sidebar instantly
+        window.dispatchEvent(new CustomEvent('storeUpdated'));
         setTimeout(() => setSuccessMsg(''), 3000);
       } else {
         const data = await res.json();
@@ -161,7 +178,7 @@ export default function AdminSettings() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'storeLogo') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'storeLogo' | 'banner') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -186,6 +203,13 @@ export default function AdminSettings() {
             branding: { ...storeData.branding, logoUrl: data.url } 
           });
           setLogoUploaded(true);
+        } else if (type === 'banner' && storeData) {
+          setStoreData({ 
+            ...storeData, 
+            branding: { ...storeData.branding, bannerUrl: data.url } 
+          });
+          setSuccessMsg('Banner uploaded successfully');
+          setTimeout(() => setSuccessMsg(''), 3000);
         }
       } else {
         alert(data.message || 'Image upload failed');
@@ -200,7 +224,9 @@ export default function AdminSettings() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h2>
+      <AdminToast message={successMsg} visible={!!successMsg} />
+      
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('settings')}</h2>
 
       {/* Tabs */}
       <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-800">
@@ -212,7 +238,7 @@ export default function AdminSettings() {
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
           }`}
         >
-          Personal Profile
+          {t('personal_profile')}
         </button>
         <button
           onClick={() => { setActiveTab('store'); setSuccessMsg(''); }}
@@ -222,7 +248,7 @@ export default function AdminSettings() {
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
           }`}
         >
-          Store Settings
+          {t('store_settings')}
         </button>
       </div>
 
@@ -241,23 +267,23 @@ export default function AdminSettings() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('profile_picture')}</label>
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center space-x-4">
                     <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
-                      {uploading ? 'Uploading...' : 'Upload Image'}
+                      {uploading ? t('uploading') : t('upload_image')}
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'profile')} disabled={uploading} />
                     </label>
                   </div>
                   {profileUploaded && (
-                    <p className="text-xs text-green-600 dark:text-green-400">Image uploaded! Click "Save Profile" to confirm.</p>
+                    <p className="text-xs text-green-600 dark:text-green-400">{t('image_uploaded_profile')}</p>
                   )}
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('full_name')}</label>
               <input
                 type="text"
                 required
@@ -268,10 +294,10 @@ export default function AdminSettings() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('new_password')}</label>
               <input
                 type="password"
-                placeholder="Leave blank to keep current password"
+                placeholder={t('leave_blank')}
                 value={profileData.password}
                 onChange={(e) => setProfileData({ ...profileData, password: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
@@ -284,13 +310,8 @@ export default function AdminSettings() {
                 disabled={loading || uploading}
                 className="bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? 'Saving...' : 'Save Profile'}
+                {loading ? t('saving') : t('save_profile')}
               </button>
-              {successMsg && activeTab === 'profile' && (
-                <span className="text-green-600 dark:text-green-400 font-medium flex items-center">
-                  <Check size={20} className="mr-1" /> {successMsg}
-                </span>
-              )}
             </div>
           </form>
         )}
@@ -310,23 +331,23 @@ export default function AdminSettings() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Logo</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_logo')}</label>
                   <div className="flex flex-col space-y-2">
                     <div className="flex items-center space-x-4">
                       <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
-                        {uploading ? 'Uploading...' : 'Upload Logo'}
+                        {uploading ? t('uploading') : t('upload_logo')}
                         <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'storeLogo')} disabled={uploading} />
                       </label>
                     </div>
                     {logoUploaded && (
-                      <p className="text-xs text-green-600 dark:text-green-400">Logo uploaded! Click "Save Store Settings" below.</p>
+                      <p className="text-xs text-green-600 dark:text-green-400">{t('image_uploaded_store')}</p>
                     )}
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_name')}</label>
                 <input
                   type="text"
                   required
@@ -341,7 +362,7 @@ export default function AdminSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Full URL</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_full_url')}</label>
                 <div className="flex">
                   <span className="inline-flex items-center px-4 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
                     http://
@@ -363,43 +384,50 @@ export default function AdminSettings() {
                     {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This URL is automatically generated from your store name and cannot be edited manually.</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('url_warning')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_category')}</label>
                 <select 
                   value={storeData.category || 'General Retail'} 
                   onChange={(e) => setStoreData({ ...storeData, category: e.target.value })} 
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
                 >
-                  <option value="Clothing">Clothing</option>
-                  <option value="Food & Beverage">Food & Beverage</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Supplements (អាហារបំប៉ន់)">Supplements (អាហារបំប៉ន់)</option>
-                  <option value="General Retail">General Retail</option>
-                  <option value="Other">Other</option>
+                  <option value="Clothing">{t('cat_clothing')}</option>
+                  <option value="Food & Beverage">{t('cat_food')}</option>
+                  <option value="Electronics">{t('cat_electronics')}</option>
+                  <option value="Supplements">{t('cat_supplements')}</option>
+                  <option value="General Retail">{t('cat_general')}</option>
+                  <option value="Other">{t('cat_other')}</option>
                 </select>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This helps us customize your product templates.</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('category_warning')}</p>
               </div>
 
               <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Payment Settings (KHQR)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('payment_settings')}</h3>
                 
+                {storeData?.plan?.planId?.name === 'Free' && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-800/50">
+                    Bakong payments are only available on Pro and Premium plans. Please upgrade to unlock.
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bakong ID</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('bakong_id')}</label>
                   <input
                     type="text"
                     value={storeData.paymentSettings?.bakongId || ''}
                     onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, bakongId: e.target.value } })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="example@bkrt"
+                    disabled={storeData?.plan?.planId?.name === 'Free'}
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Must end with @bkrt or @wing, etc.</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('bakong_warning')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Currency</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('currency')}</label>
                   <select 
                     value={storeData.paymentSettings?.currency || 'USD'} 
                     onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, currency: e.target.value } })} 
@@ -412,10 +440,27 @@ export default function AdminSettings() {
               </div>
 
               <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Store Branding</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('store_branding')}</h3>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Banner</label>
+                  <div className="flex items-center space-x-4">
+                    {storeData.branding?.bannerUrl && (
+                      <div className="h-16 w-32 rounded bg-gray-200 dark:bg-gray-800 overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
+                        <img src={storeData.branding.bannerUrl} alt="Store Banner" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <div>
+                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
+                        {uploading ? t('uploading') : 'Upload Banner'}
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Brand Color</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('primary_color')}</label>
                 <div className="flex items-center space-x-3">
                   <input
                     type="color"
@@ -436,17 +481,12 @@ export default function AdminSettings() {
                   disabled={loading || uploading}
                   className="bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
                 >
-                  {loading ? 'Saving...' : 'Save Store Settings'}
+                  {loading ? t('saving') : t('save_store')}
                 </button>
-                {successMsg && activeTab === 'store' && (
-                  <span className="text-green-600 dark:text-green-400 font-medium flex items-center">
-                    <Check size={20} className="mr-1" /> {successMsg}
-                  </span>
-                )}
               </div>
             </form>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400 py-8 text-center">You need to set up a store first.</p>
+            <p className="text-gray-500 dark:text-gray-400 py-8 text-center">{t('setup_store_first')}</p>
           )
         )}
       </div>

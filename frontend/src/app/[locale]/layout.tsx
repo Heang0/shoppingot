@@ -3,7 +3,11 @@ import {getMessages} from 'next-intl/server';
 import { Inter, Kantumruy_Pro } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], display: 'swap' });
-const kantumruy = Kantumruy_Pro({ subsets: ["khmer"], display: 'swap' });
+const kantumruy = Kantumruy_Pro({ 
+  subsets: ["khmer"], 
+  display: 'swap',
+  variable: '--font-kantumruy'
+});
 
 export const metadata = {
   title: 'ShoppingOT',
@@ -20,7 +24,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
  
   // Select the font based on the locale
-  const fontClass = locale === 'km' ? kantumruy.className : inter.className;
+  const fontClass = locale === 'km' ? `${kantumruy.className} ${kantumruy.variable} lang-km` : inter.className;
 
   return (
     <div className={fontClass}>

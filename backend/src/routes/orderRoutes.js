@@ -5,12 +5,15 @@ import {
   getOrdersForStore,
   getCustomerOrders,
   updateOrderStatus,
+  simulateOrderPayment,
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.post('/', protect, createOrderAndGenerateQR);
+router.post('/guest', createOrderAndGenerateQR);
+router.post('/:id/simulate-pay', simulateOrderPayment);
 router.post('/:id/verify', verifyOrderPayment);
 router.get('/store', protect, getOrdersForStore);
 router.get('/customer', protect, getCustomerOrders);
