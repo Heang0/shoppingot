@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { ChevronLeft, Moon, Sun, Menu, ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -13,19 +13,22 @@ interface Category {
   name: string;
 }
 
-export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, locale }: {
+export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, locale, initialThemeStyle }: {
   storeName: string;
   storeLogo?: string;
   primaryColor: string;
   slug: string;
   locale: string;
+  initialThemeStyle?: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [themeStyle, setThemeStyle] = useState(initialThemeStyle || 'default');
 
   const items = useCartStore(state => state.items);
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -37,6 +40,10 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
         if (!storeRes.ok) return;
         const store = await storeRes.json();
+        
+        const previewTheme = searchParams.get('theme');
+        setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
+
         const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
           const cats = await catRes.json();
@@ -48,27 +55,52 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
   }, [slug]);
 
   // Clean paths — middleware rewrites subdomain paths automatically
-  const homeHref = `/${locale}`;
-  const cartHref = `/${locale}/cart`;
-  const profileHref = `/${locale}/profile`;
+  const previewTheme = searchParams.get('theme');
+  const previewColor = searchParams.get('color');
+
+  const appendParams = (href: string) => {
+    if (!previewTheme && !previewColor) return href;
+    const url = new URL(href, 'http://localhost');
+    if (previewTheme) url.searchParams.set('theme', previewTheme);
+    if (previewColor) url.searchParams.set('color', previewColor);
+    return `${url.pathname}${url.search}`;
+  };
+
+  const homeHref = appendParams(`/${locale}`);
+  const cartHref = appendParams(`/${locale}/cart`);
+  const profileHref = appendParams(`/${locale}/profile`);
 
   // isHome: either the root or /km (locale only)
   const isHome = pathname === `/${locale}` || pathname === '/' || pathname === `/${locale}/`;
 
   // Language toggle — swap locale prefix
   const langHref = (() => {
-    if (!pathname) return `/${locale === 'en' ? 'km' : 'en'}`;
-    const newLocale = locale === 'en' ? 'km' : 'en';
-    // Replace locale segment
-    if (pathname.startsWith(`/${locale}`)) {
-      return pathname.replace(`/${locale}`, `/${newLocale}`);
+    let base = '';
+    if (!pathname) {
+      base = `/${locale === 'en' ? 'km' : 'en'}`;
+    } else {
+      const newLocale = locale === 'en' ? 'km' : 'en';
+      if (pathname.startsWith(`/${locale}`)) {
+        base = pathname.replace(`/${locale}`, `/${newLocale}`);
+      } else {
+        base = `/${newLocale}`;
+      }
     }
-    return `/${newLocale}`;
+    return appendParams(base);
   })();
+
+  let headerClass = "bg-white dark:bg-[#111111] sticky top-0 z-50 ";
+  if (themeStyle === 'neo-brutalism') {
+    headerClass += "border-b-[3px] border-black dark:border-white shadow-[0px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[0px_4px_0px_0px_rgba(255,255,255,1)]";
+  } else if (themeStyle === 'minimalist') {
+    headerClass += "border-b border-gray-200 dark:border-gray-800";
+  } else {
+    headerClass += "border-b border-gray-100 dark:border-gray-800";
+  }
 
   return (
     <>
-    <header className="bg-white dark:bg-[#111111] sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800">
+    <header className={headerClass}>
 
       {/* Top bar */}
       <div className="h-14 md:h-16 flex items-center px-4 md:px-8">
@@ -189,6 +221,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
       locale={locale}
       slug={slug}
       categories={categories}
+      themeStyle={themeStyle}
     />
     </>
   );

@@ -1,4 +1,4 @@
-import { BakongKHQR, MerchantInfo, khqrData } from 'bakong-khqr';
+import { BakongKHQR, MerchantInfo, IndividualInfo, khqrData } from 'bakong-khqr';
 
 export const generateKHQR = async (bakongId, amount, currency, orderId) => {
   try {
@@ -7,19 +7,22 @@ export const generateKHQR = async (bakongId, amount, currency, orderId) => {
     // Resolve currency enum
     const curEnum = currency?.toUpperCase() === 'KHR' ? khqrData.currency.khr : khqrData.currency.usd;
 
-    // Create MerchantInfo
-    const info = new MerchantInfo(
-      bakongId,
-      'ShoppingOT Merchant', // Default name if not available
-      'Phnom Penh',          // Default city
-      Number(amount),
-      curEnum,
-      'Store',               // storeLabel
-      'Checkout',            // terminalLabel
-      orderId.toString()     // billNumber / purpose
+    // Create IndividualInfo
+    const info = new IndividualInfo(
+      bakongId || process.env.BAKONG_ACCOUNT_ID,
+      process.env.BAKONG_MERCHANT_NAME || 'ShoppingOT', 
+      process.env.BAKONG_MERCHANT_CITY || 'Phnom Penh',
+      {
+        amount: Number(amount),
+        currency: curEnum,
+        storeLabel: process.env.BAKONG_STORE_LABEL || 'SITE',
+        terminalLabel: process.env.BAKONG_TERMINAL_LABEL || 'WEB',
+        billNumber: orderId.toString(),
+        expirationTimestamp: Date.now() + 5 * 60 * 1000 // 5 minutes expiration
+      }
     );
 
-    const response = khqr.generateMerchant(info);
+    const response = khqr.generateIndividual(info);
 
     if (response.status.code !== 0) {
       throw new Error('Failed to generate KHQR');

@@ -62,9 +62,10 @@ export default function BakongKHQRModal({
           style={{ width: '330px', height: '479px', fontFamily: '"Nunito Sans", sans-serif', boxShadow: '0 0 16px rgba(0,0,0,0.1)' }}
         >
           {/* Header */}
-          <div className="h-[57px] bg-[#E1232E] w-full shrink-0 flex items-center justify-between px-4 relative z-10">
-            <span className="text-white font-bold tracking-wider">KHQR</span>
-            <button onClick={handleCloseClick} className="text-white/80 hover:text-white transition-colors">
+          <div className="h-[57px] bg-[#E1232E] w-full shrink-0 flex items-center justify-center relative z-10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo/KHQR Logo.png" alt="KHQR Logo" className="h-[18px] object-contain brightness-0 invert" />
+            <button onClick={handleCloseClick} className="absolute right-4 text-white/80 hover:text-white transition-colors">
               <X size={24} />
             </button>
             {/* Downward Tail */}
@@ -82,6 +83,9 @@ export default function BakongKHQRModal({
                 <span className="text-[#000000] text-[14px] font-normal leading-none tracking-[0px]">{currency}</span>
               </div>
             </div>
+
+            {/* Dashed Line Separator */}
+            <div className="w-full border-t-[2px] border-dashed border-gray-300/80 my-2"></div>
 
             {/* QR Code Section */}
             <div className="w-full aspect-square relative mt-4 mx-auto max-w-[234px] flex items-center justify-center bg-white">

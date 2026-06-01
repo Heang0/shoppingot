@@ -206,5 +206,24 @@
     "currency": "រូបិយប័ណ្ណ",
     "update_store": "ធ្វើបច្ចុប្បន្នភាពការកំណត់ហាង",
     "save_store": "រក្សាទុកការកំណត់ហាង"
+  },
+  "AdminTheme": {
+    "toast_success": "រក្សាទុកការរចនាដោយជោគជ័យ!",
+    "back_settings": "ត្រឡប់ទៅការកំណត់",
+    "title": "កែច្នៃការរចនា Theme",
+    "save_btn": "រក្សាទុក Theme",
+    "saving_btn": "កំពុងរក្សាទុក...",
+    "color_title": "1. ពណ៌ម៉ាកយីហោ",
+    "color_desc": "ជ្រើសរើសពណ៌ចម្បងសម្រាប់ប៊ូតុង និងចំណុចលេចធ្លោ។",
+    "style_title": "2. រចនាប័ទ្ម Theme",
+    "style_desc": "ជ្រើសរើសទម្រង់រចនាទូទៅនៃហាងរបស់អ្នក។",
+    "live_preview": "មើលមុន (Live Preview)",
+    "loading_preview": "កំពុងដំណើរការមើលមុន...",
+    "style_default": "រលោង និងទាន់សម័យ (Sleek)",
+    "style_default_desc": "ទាន់សម័យ គែមមូល ស្រមោលស្រាលៗ។",
+    "style_minimalist": "សាមញ្ញ និងស្រឡះ (Minimalist)",
+    "style_minimalist_desc": "បន្ទាត់ច្បាស់ គែមស្រួច ចន្លោះសច្រើន។",
+    "style_neo": "លេចធ្លោ និងដិត (Neo-Brutalism)",
+    "style_neo_desc": "ស៊ុមខ្មៅក្រាស់ ស្រមោលរឹង រចនាប័ទ្មលេចធ្លោ។"
   }
 }

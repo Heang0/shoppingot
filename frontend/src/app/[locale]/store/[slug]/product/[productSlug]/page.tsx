@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Minus, Plus } from 'lucide-react';
 
 export default function ProductDetailPage({ params }: { params: { slug: string, productSlug: string, locale: string } }) {
@@ -11,25 +11,36 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
+  const [themeStyle, setThemeStyle] = useState('default');
   
   const addItem = useCartStore((state) => state.addItem);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndStore = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/products/${params.productSlug}`);
-        if (!res.ok) throw new Error('Failed to load product');
-        const data = await res.json();
+        const [prodRes, storeRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/products/${params.productSlug}`),
+          fetch(`http://localhost:5000/api/stores/${params.slug}`)
+        ]);
+        if (!prodRes.ok) throw new Error('Failed to load product');
+        const data = await prodRes.json();
         setProduct(data);
+
+        if (storeRes.ok) {
+          const store = await storeRes.json();
+          const previewTheme = searchParams.get('theme');
+          setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
+        }
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
-  }, [params.productSlug]);
+    fetchProductAndStore();
+  }, [params.productSlug, params.slug, searchParams]);
 
   const handleSelect = (variantName: string, option: string) => {
     setSelectedVariants(prev => ({ ...prev, [variantName]: option }));
@@ -120,10 +131,12 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
                       <button
                         key={opt}
                         onClick={() => handleSelect(variant.name, opt)}
-                        className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
-                          isSelected 
-                            ? 'bg-black dark:bg-white text-white dark:text-black scale-105 shadow-md' 
-                            : 'bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-200'
+                        className={`px-5 py-2.5 transition-all text-sm ${
+                          themeStyle === 'neo-brutalism' 
+                            ? `border-[2px] font-black uppercase rounded-none ${isSelected ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] dark:shadow-[3px_3px_0px_0px_rgba(255,255,255,1)]' : 'bg-white text-black dark:bg-black dark:text-white border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none'}`
+                            : themeStyle === 'minimalist'
+                            ? `border rounded-sm font-medium tracking-wide ${isSelected ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' : 'bg-transparent text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700 hover:border-black dark:hover:border-white'}`
+                            : `rounded-full font-medium ${isSelected ? 'bg-black dark:bg-white text-white dark:text-black scale-105 shadow-md' : 'bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 hover:bg-gray-200'}`
                         }`}
                       >
                         {opt}
@@ -160,7 +173,13 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
         <div className="hidden md:block mt-8">
           <button
             onClick={handleAddToCart}
-            className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+            className={`w-full py-4 text-lg font-bold transition-all flex items-center justify-center gap-2 ${
+              themeStyle === 'neo-brutalism'
+                ? 'bg-white text-black dark:bg-black dark:text-white border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest'
+                : themeStyle === 'minimalist'
+                ? 'bg-black text-white dark:bg-white dark:text-black rounded-sm tracking-widest uppercase hover:bg-gray-800 dark:hover:bg-gray-200'
+                : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+            }`}
           >
             Add to Cart - ${(product.price * quantity).toFixed(2)}
           </button>
@@ -169,10 +188,16 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
       </div>
 
       {/* Sticky Bottom Add to Cart (Mobile Only) */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md p-4 pb-safe z-40 border-t border-gray-100 dark:border-gray-800 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <div className={`md:hidden sticky bottom-0 left-0 w-full bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md p-4 pb-safe z-40 border-t ${themeStyle === 'neo-brutalism' ? 'border-t-[3px] border-black dark:border-white' : 'border-gray-100 dark:border-gray-800'} shadow-[0_-10px_40px_rgba(0,0,0,0.05)]`}>
         <button
           onClick={handleAddToCart}
-          className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl text-lg font-bold shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+          className={`w-full py-4 text-lg font-bold transition-all flex items-center justify-center gap-2 ${
+              themeStyle === 'neo-brutalism'
+                ? 'bg-white text-black dark:bg-black dark:text-white border-[3px] border-black dark:border-white rounded-none uppercase tracking-widest'
+                : themeStyle === 'minimalist'
+                ? 'bg-black text-white dark:bg-white dark:text-black rounded-sm tracking-widest uppercase'
+                : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl'
+            }`}
         >
           Add to Cart - ${(product.price * quantity).toFixed(2)}
         </button>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { X } from "lucide-react";
+import { X, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export type SidebarItem = {
@@ -22,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,6 +117,13 @@ export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
               <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
           </div>
+          <button 
+            onClick={logout}
+            className="mt-4 flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <LogOut size={16} />
+            Log out
+          </button>
         </div>
       </div>
     </>

@@ -33,11 +33,45 @@ export const getStoreAnalytics = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5);
 
+    // 5. Past 7 days revenue for Recharts
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const dailyRevenue = await Order.aggregate([
+      { 
+        $match: { 
+          storeId: store._id, 
+          paymentStatus: 'PAID',
+          createdAt: { $gte: sevenDaysAgo }
+        } 
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
+    const chartData = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayData = dailyRevenue.find(dr => dr._id === dateStr);
+      chartData.push({
+        date: dateStr,
+        shortDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        revenue: dayData ? dayData.revenue : 0,
+      });
+    }
+
     res.json({
       totalRevenue,
       totalOrders,
       totalProducts,
-      recentOrders
+      recentOrders,
+      chartData
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

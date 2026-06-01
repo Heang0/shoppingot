@@ -24,7 +24,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
  
   // Select the font based on the locale
-  const fontClass = locale === 'km' ? `${kantumruy.className} ${kantumruy.variable} lang-km` : inter.className;
+  const fontClass = locale === 'km' ? `${kantumruy.className} ${kantumruy.variable} lang-km` : `${inter.className} ${kantumruy.variable}`;
 
   return (
     <div className={fontClass}>

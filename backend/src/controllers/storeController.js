@@ -125,7 +125,9 @@ const updateStore = async (req, res) => {
 // @access  Public
 const getStoreBySlug = async (req, res) => {
   try {
-    const store = await Store.findOne({ slug: req.params.slug }).select('-paymentSettings');
+    const store = await Store.findOne({ slug: req.params.slug })
+      .select('-paymentSettings')
+      .populate('plan.planId');
     if (store) {
       res.json(store);
     } else {

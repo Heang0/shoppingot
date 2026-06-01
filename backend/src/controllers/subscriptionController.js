@@ -5,9 +5,10 @@ import { generateKHQR, verifyKHQRTransaction } from '../services/bakongService.j
 
 // @desc    Generate QR for Plan Upgrade
 // @route   POST /api/subscription/generate-qr
+// @route   POST /api/subscription/generate-qr
 // @access  Private (Store Admin)
 const generateSubscriptionQR = async (req, res) => {
-  const { planId, storeId } = req.body;
+  const { planId, storeId, billingCycle = 'monthly' } = req.body;
 
   try {
     const plan = await SubscriptionPlan.findById(planId);
@@ -23,12 +24,22 @@ const generateSubscriptionQR = async (req, res) => {
 
     const superAdminBakongId = process.env.SUPERADMIN_BAKONG_ID;
     
+    // Calculate price
+    let amount = plan.price;
+    if (billingCycle === 'annually') {
+      let discountRate = 1; // Free or other
+      if (plan.name === 'Pro') discountRate = 0.8; // 20% discount
+      else if (plan.name === 'Premium') discountRate = 0.7; // 30% discount
+      amount = Number((plan.price * 12 * discountRate).toFixed(2));
+    }
+
     // Create pending payment record
     const payment = new SubscriptionPayment({
       storeId,
       planId,
-      amount: plan.price,
+      amount,
       currency: 'USD',
+      billingCycle,
       md5Hash: 'pending', // Will update below
     });
     await payment.save();
@@ -36,7 +47,7 @@ const generateSubscriptionQR = async (req, res) => {
     // Generate KHQR
     const { md5, qrString } = await generateKHQR(
       superAdminBakongId,
-      plan.price,
+      amount,
       'USD',
       payment._id.toString()
     );
@@ -83,7 +94,11 @@ const verifySubscriptionPayment = async (req, res) => {
       const plan = await SubscriptionPlan.findById(payment.planId);
       
       const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+      if (payment.billingCycle === 'annually') {
+        expiryDate.setDate(expiryDate.getDate() + 365);
+      } else {
+        expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+      }
 
       store.plan = {
         planId: plan._id,
@@ -118,7 +133,11 @@ const simulateSubscriptionPayment = async (req, res) => {
     const plan = await SubscriptionPlan.findById(payment.planId);
     
     const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+    if (payment.billingCycle === 'annually') {
+      expiryDate.setDate(expiryDate.getDate() + 365);
+    } else {
+      expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+    }
 
     store.plan = {
       planId: plan._id,
@@ -133,4 +152,38 @@ const simulateSubscriptionPayment = async (req, res) => {
   }
 };
 
-export { generateSubscriptionQR, verifySubscriptionPayment, simulateSubscriptionPayment };
+// @desc    Activate Free Plan directly
+// @route   POST /api/subscription/free-plan
+// @access  Private (Merchant)
+const activateFreePlan = async (req, res) => {
+  const { planId } = req.body;
+  try {
+    const store = await Store.findOne({ ownerId: req.user._id }).populate('plan.planId');
+    if (!store) return res.status(404).json({ message: 'Store not found' });
+
+    // Prevent overwriting an active paid plan
+    if (store.plan && store.plan.planId && store.plan.planId.price > 0 && store.plan.expiresAt > new Date()) {
+      return res.status(400).json({ message: 'You already have an active paid plan. It will revert to the free plan upon expiration.' });
+    }
+
+    const plan = await SubscriptionPlan.findById(planId);
+    if (!plan) return res.status(404).json({ message: 'Plan not found' });
+    if (plan.price > 0) return res.status(400).json({ message: 'This plan is not free' });
+
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+
+    store.plan = {
+      planId: plan._id,
+      expiresAt: expiryDate,
+      isActive: true,
+    };
+    await store.save();
+
+    res.json({ status: 'SUCCESS', store });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { generateSubscriptionQR, verifySubscriptionPayment, simulateSubscriptionPayment, activateFreePlan };

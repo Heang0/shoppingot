@@ -33,7 +33,7 @@ export default async function StorefrontLayout({
     <div className="min-h-screen bg-white dark:bg-[#111111] flex flex-col relative w-full selection:bg-black/10 dark:selection:bg-white/10">
       
       {/* Sleek App Top Bar */}
-      <StoreTopNav storeName={store.name} storeLogo={store.branding?.logoUrl} primaryColor={primaryColor} slug={slug} locale={locale} />
+      <StoreTopNav storeName={store.name} storeLogo={store.branding?.logoUrl} primaryColor={primaryColor} slug={slug} locale={locale} initialThemeStyle={store.branding?.themeStyle || 'default'} />
 
       {/* Content Area */}
       <main className="flex-1 w-full bg-white dark:bg-black pb-20 md:pb-0">
@@ -41,7 +41,7 @@ export default async function StorefrontLayout({
       </main>
 
       {/* Bottom Navigation (Mobile Only) */}
-      <StoreBottomNav locale={locale} primaryColor={primaryColor} slug={slug} />
+      <StoreBottomNav locale={locale} primaryColor={primaryColor} slug={slug} initialThemeStyle={store.branding?.themeStyle || 'default'} />
     </div>
   );
 }

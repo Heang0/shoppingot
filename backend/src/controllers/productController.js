@@ -73,7 +73,7 @@ const createProduct = async (req, res) => {
   const { storeId, title, titleKm, description, descriptionKm, price, imageUrl, stock, variants, categoryId } = req.body;
 
   try {
-    const store = await Store.findById(storeId);
+    const store = await Store.findById(storeId).populate('plan.planId');
 
     if (!store) {
       return res.status(404).json({ message: 'Store not found' });
@@ -81,6 +81,13 @@ const createProduct = async (req, res) => {
 
     if (store.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to add products to this store' });
+    }
+
+    // Check plan limits
+    const maxProducts = store.plan?.planId?.maxProducts || 0;
+    const currentProductCount = await Product.countDocuments({ storeId });
+    if (currentProductCount >= maxProducts) {
+      return res.status(400).json({ message: `Product limit reached. Your plan allows up to ${maxProducts} products.` });
     }
 
     const slug = await generateUniqueSlug(title, Product);

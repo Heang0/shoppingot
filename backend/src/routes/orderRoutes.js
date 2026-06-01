@@ -6,6 +6,7 @@ import {
   getCustomerOrders,
   updateOrderStatus,
   simulateOrderPayment,
+  getStoreAnalytics,
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 

@@ -206,5 +206,24 @@
     "currency": "Currency",
     "update_store": "Update Store Settings",
     "save_store": "Save Store Settings"
+  },
+  "AdminTheme": {
+    "toast_success": "Theme Settings Saved Successfully!",
+    "back_settings": "Back to Settings",
+    "title": "Theme Customizer",
+    "save_btn": "Save Theme",
+    "saving_btn": "Saving...",
+    "color_title": "1. Brand Color",
+    "color_desc": "Choose the primary color for buttons and highlights.",
+    "style_title": "2. Theme Style",
+    "style_desc": "Select the overall aesthetic of your store.",
+    "live_preview": "Live Preview",
+    "loading_preview": "Loading preview...",
+    "style_default": "Sleek (Default)",
+    "style_default_desc": "Modern, soft rounded corners, light shadows.",
+    "style_minimalist": "Minimalist",
+    "style_minimalist_desc": "Clean lines, sharp corners, plenty of white space.",
+    "style_neo": "Neo-Brutalism",
+    "style_neo_desc": "Bold black borders, hard shadows, loud design."
   }
 }

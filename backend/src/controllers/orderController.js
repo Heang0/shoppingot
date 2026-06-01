@@ -76,7 +76,7 @@ const verifyOrderPayment = async (req, res) => {
 
     const verificationResult = await verifyKHQRTransaction(md5);
 
-    if (verificationResult.status === 'PAID') {
+    if (verificationResult.status === 0) {
       order.paymentStatus = 'PAID';
       await order.save();
 
@@ -201,4 +201,70 @@ const simulateOrderPayment = async (req, res) => {
   }
 };
 
-export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus, simulateOrderPayment };
+// @desc    Get store analytics
+// @route   GET /api/orders/analytics
+// @access  Private (Store Admin)
+const getStoreAnalytics = async (req, res) => {
+  try {
+    const store = await Store.findOne({ ownerId: req.user._id });
+    if (!store) {
+      return res.status(404).json({ message: 'Store not found' });
+    }
+
+    const totalOrders = await Order.countDocuments({ storeId: store._id, paymentStatus: 'PAID' });
+    
+    const revenueResult = await Order.aggregate([
+      { $match: { storeId: store._id, paymentStatus: 'PAID' } },
+      { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' } } }
+    ]);
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+
+    // Past 7 days revenue
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const dailyRevenue = await Order.aggregate([
+      { 
+        $match: { 
+          storeId: store._id, 
+          paymentStatus: 'PAID',
+          createdAt: { $gte: sevenDaysAgo }
+        } 
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$totalAmount' },
+          orders: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Fill in missing days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayData = dailyRevenue.find(dr => dr._id === dateStr);
+      last7Days.push({
+        date: dateStr,
+        shortDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        revenue: dayData ? dayData.revenue : 0,
+        orders: dayData ? dayData.orders : 0
+      });
+    }
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      chartData: last7Days
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus, simulateOrderPayment, getStoreAnalytics };

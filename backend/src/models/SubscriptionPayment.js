@@ -19,7 +19,12 @@ const subscriptionPaymentSchema = new mongoose.Schema(
     currency: {
       type: String,
       enum: ['USD', 'KHR'],
-      required: true,
+      default: 'USD',
+    },
+    billingCycle: {
+      type: String,
+      enum: ['monthly', 'annually'],
+      default: 'monthly',
     },
     md5Hash: {
       type: String,

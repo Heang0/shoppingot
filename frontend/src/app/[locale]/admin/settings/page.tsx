@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
 import { User, Store as StoreIcon, Copy, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface Store {
   _id: string;
@@ -460,20 +461,17 @@ export default function AdminSettings() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('primary_color')}</label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    value={storeData.branding?.primaryColor || '#E84C3D'}
-                    onChange={(e) => setStoreData({ ...storeData, branding: { ...storeData.branding, primaryColor: e.target.value } })}
-                    className="h-10 w-10 border-0 p-0 rounded cursor-pointer"
-                  />
-                  <span className="text-gray-600 dark:text-gray-400 font-mono">
-                    {storeData.branding?.primaryColor || '#E84C3D'}
-                  </span>
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-gray-900 dark:text-white">Theme & Design Customizer</h4>
+                      <p className="text-sm text-gray-500 mt-1">Change your store's primary color and visual style.</p>
+                    </div>
+                    <Link href="/admin/settings/theme" className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors">
+                      Customize Theme &rarr;
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
 
               <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center space-x-4">
                 <button

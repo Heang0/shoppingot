@@ -51,6 +51,7 @@ const storeSchema = new mongoose.Schema(
       logoUrl: { type: String },
       bannerUrl: { type: String },
       primaryColor: { type: String, default: '#E84C3D' },
+      themeStyle: { type: String, enum: ['default', 'minimalist', 'neo-brutalism'], default: 'default' },
     },
     isActive: {
       type: Boolean,
