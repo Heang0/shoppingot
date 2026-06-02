@@ -90,7 +90,7 @@ const updatePaymentSettings = async (req, res) => {
 // @route   PUT /api/stores/:id
 // @access  Private (Store owner)
 const updateStore = async (req, res) => {
-  const { name, slug, branding, category } = req.body;
+  const { name, slug, category, branding, contact } = req.body;
 
   try {
     const store = await Store.findById(req.params.id);
@@ -108,7 +108,18 @@ const updateStore = async (req, res) => {
       store.name = name || store.name;
       store.slug = slug || store.slug;
       store.category = category || store.category;
-      if (branding) store.branding = branding;
+      if (branding) {
+        store.branding = {
+          ...(store.branding?.toObject ? store.branding.toObject() : store.branding),
+          ...branding,
+        };
+      }
+      if (contact) {
+        store.contact = {
+          ...(store.contact?.toObject ? store.contact.toObject() : store.contact),
+          ...contact,
+        };
+      }
 
       const updatedStore = await store.save();
       res.json(updatedStore);

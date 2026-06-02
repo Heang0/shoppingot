@@ -21,6 +21,22 @@ const orderSchema = new mongoose.Schema(
       phone: { type: String },
       address: { type: String },
     },
+    deliveryPartner: {
+      type: String,
+      enum: ['J&T Express', 'VET Express', 'Grab', 'Jalat Logistics', 'Chat 1', 'Other'],
+      default: 'J&T Express',
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+    },
+    deliveryNote: {
+      type: String,
+    },
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
     items: [
       {
         productId: {
@@ -43,6 +59,27 @@ const orderSchema = new mongoose.Schema(
     bakongMd5: {
       type: String,
     },
+    orderSource: {
+      type: String,
+      enum: ['ONLINE', 'POS'],
+      default: 'ONLINE',
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['KHQR', 'CASH'],
+      default: 'KHQR',
+    },
+    cashReceived: {
+      type: Number,
+    },
+    changeGiven: {
+      type: Number,
+    },
+    cashierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+    },
     paymentStatus: {
       type: String,
       enum: ['PENDING', 'PAID', 'FAILED'],
@@ -60,5 +97,9 @@ const orderSchema = new mongoose.Schema(
 );
 
 const Order = mongoose.model('Order', orderSchema);
+
+// Create indexes
+orderSchema.index({ storeId: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ customerId: 1 });
 
 export default Order;

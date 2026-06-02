@@ -10,6 +10,7 @@ interface BakongKHQRModalProps {
   currency: string;
   merchantName?: string;
   isPaid: boolean;
+  locale?: string;
   onClose: () => void;
   onSuccessClose?: () => void;
   onSimulatePay?: () => void;
@@ -21,12 +22,27 @@ export default function BakongKHQRModal({
   currency,
   merchantName = 'ShoppingOT Merchant',
   isPaid,
+  locale = 'en',
   onClose,
   onSuccessClose,
   onSimulatePay
 }: BakongKHQRModalProps) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 mins
+  const isKm = locale === 'km';
+  const text = {
+    cancelPayment: isKm ? 'បោះបង់ការទូទាត់?' : 'Cancel Payment?',
+    cancelConfirm: isKm ? 'តើអ្នកប្រាកដជាចង់បោះបង់ប្រតិបត្តិការនេះមែនទេ?' : 'Are you sure you want to cancel this transaction?',
+    no: isKm ? 'ទេ' : 'No',
+    yes: isKm ? 'បាទ/ចាស' : 'Yes',
+    paymentSuccessful: isKm ? 'ការទូទាត់បានជោគជ័យ' : 'Payment Successful',
+    verified: isKm ? 'ប្រតិបត្តិការរបស់អ្នកត្រូវបានផ្ទៀងផ្ទាត់។' : 'Your transaction has been verified.',
+    continue: isKm ? 'បន្ត' : 'Continue',
+    expiresIn: isKm ? 'ផុតកំណត់ក្នុង' : 'Expires in',
+    status: isKm ? 'ស្ថានភាព' : 'Status',
+    waiting: isKm ? 'កំពុងរង់ចាំ...' : 'Waiting...',
+    simulatePayment: isKm ? '[DEV] សាកល្បងការទូទាត់' : '[DEV] Simulate Payment',
+  };
 
   useEffect(() => {
     if (isPaid || timeLeft <= 0) return;
@@ -104,11 +120,11 @@ export default function BakongKHQRModal({
           {/* Cancel Confirmation */}
           {showCancelConfirm && !isPaid && (
             <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Cancel Payment?</h3>
-              <p className="text-sm text-gray-500 mb-8">Are you sure you want to cancel this transaction?</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{text.cancelPayment}</h3>
+              <p className="text-sm text-gray-500 mb-8">{text.cancelConfirm}</p>
               <div className="flex w-full gap-3">
-                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200">No</button>
-                <button onClick={confirmCancel} className="flex-1 py-3 bg-[#E1232E] text-white font-bold rounded-xl hover:bg-red-700">Yes</button>
+                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200">{text.no}</button>
+                <button onClick={confirmCancel} className="flex-1 py-3 bg-[#E1232E] text-white font-bold rounded-xl hover:bg-red-700">{text.yes}</button>
               </div>
             </div>
           )}
@@ -119,10 +135,10 @@ export default function BakongKHQRModal({
               <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 size={48} className="text-green-500" strokeWidth={2.5} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful</h3>
-              <p className="text-sm text-gray-500 mb-8">Your transaction has been verified.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{text.paymentSuccessful}</h3>
+              <p className="text-sm text-gray-500 mb-8">{text.verified}</p>
               <button onClick={onSuccessClose || onClose} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black shadow-lg">
-                Continue
+                {text.continue}
               </button>
             </div>
           )}
@@ -132,17 +148,17 @@ export default function BakongKHQRModal({
         {/* Floating Details (Outside Card) */}
         <div className="w-[330px] mt-6 flex flex-col gap-3">
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
-            <span className="font-medium">Expires in</span>
+            <span className="font-medium">{text.expiresIn}</span>
             <span className="font-bold tracking-widest font-mono">{formatTime(timeLeft)}</span>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
-            <span className="font-medium">Status</span>
+            <span className="font-medium">{text.status}</span>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
               </span>
-              <span className="font-semibold text-blue-100">Waiting...</span>
+              <span className="font-semibold text-blue-100">{text.waiting}</span>
             </div>
           </div>
         </div>
@@ -153,7 +169,7 @@ export default function BakongKHQRModal({
             onClick={onSimulatePay}
             className="mt-4 bg-[#E1232E] text-white text-xs font-bold uppercase tracking-widest py-2 px-6 rounded-full hover:bg-red-700 shadow-[0_0_15px_rgba(225,35,46,0.5)] border border-red-500/50"
           >
-            [DEV] Simulate Payment
+            {text.simulatePayment}
           </button>
         )}
 

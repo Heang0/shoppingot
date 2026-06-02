@@ -40,6 +40,13 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    barcode: {
+      type: String,
+      sparse: true,
+    },
+    sku: {
+      type: String,
+    },
     variants: [
       {
         name: { type: String, required: true }, // e.g. "Size"
@@ -53,5 +60,9 @@ const productSchema = new mongoose.Schema(
 );
 
 const Product = mongoose.model('Product', productSchema);
+
+// Create indexes
+productSchema.index({ storeId: 1, createdAt: -1 });
+productSchema.index({ storeId: 1, category: 1 });
 
 export default Product;

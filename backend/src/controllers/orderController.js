@@ -1,14 +1,15 @@
 import Order from '../models/Order.js';
 import Store from '../models/Store.js';
+import Product from '../models/Product.js';
 import { generateKHQR, verifyKHQRTransaction } from '../services/bakongService.js';
 
 // @desc    Create Order & Generate QR
 // @route   POST /api/orders
 // @access  Private (Customer)
 const createOrderAndGenerateQR = async (req, res) => {
-  const { storeId, items, totalAmount, guestInfo } = req.body;
-
   try {
+    const { storeId, items, totalAmount, guestInfo, deliveryPartner, deliveryFee, deliveryNote, subtotal, orderSource, paymentMethod, cashReceived, changeGiven } = req.body;
+
     const store = await Store.findById(storeId);
 
     if (!store || !store.isActive) {
@@ -22,6 +23,8 @@ const createOrderAndGenerateQR = async (req, res) => {
     const customerId = req.user ? req.user._id : null;
     const isGuest = !customerId;
 
+    const isPOS = orderSource === 'POS';
+
     const order = new Order({
       storeId,
       customerId,
@@ -29,16 +32,42 @@ const createOrderAndGenerateQR = async (req, res) => {
       guestInfo: isGuest ? guestInfo : undefined,
       items,
       totalAmount,
-      paymentStatus: 'PENDING',
+      subtotal: subtotal || totalAmount,
+      deliveryPartner,
+      deliveryFee: deliveryFee || 0,
+      deliveryNote,
+      orderSource: isPOS ? 'POS' : 'ONLINE',
+      paymentMethod: paymentMethod || 'KHQR',
+      paymentStatus: paymentMethod === 'CASH' ? 'PAID' : 'PENDING',
+      cashReceived: cashReceived,
+      changeGiven: changeGiven,
+      cashierId: isPOS ? req.user._id : undefined,
     });
     await order.save();
+
+    // Deduct stock if CASH (instantly paid)
+    if (order.paymentStatus === 'PAID') {
+      for (const item of items) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
+      }
+    }
+
+    if (order.paymentMethod === 'CASH') {
+      return res.status(201).json({
+        orderId: order._id,
+        totalAmount,
+        currency: store.paymentSettings.currency,
+        status: 'PAID'
+      });
+    }
 
     // Generate KHQR using Store's Bakong ID
     const { md5, qrString } = await generateKHQR(
       store.paymentSettings.bakongId,
       totalAmount,
       store.paymentSettings.currency,
-      order._id.toString()
+      order._id.toString(),
+      store.name
     );
 
     order.bakongMd5 = md5;
@@ -50,6 +79,7 @@ const createOrderAndGenerateQR = async (req, res) => {
       md5,
       totalAmount,
       currency: store.paymentSettings.currency,
+      status: 'PENDING'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -79,6 +109,11 @@ const verifyOrderPayment = async (req, res) => {
     if (verificationResult.status === 0) {
       order.paymentStatus = 'PAID';
       await order.save();
+
+      // Deduct stock when paid
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
+      }
 
       // [PHASE 3] Dispatch Telegram Notification to Merchant
       // If TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are in .env, send a real message
@@ -123,14 +158,17 @@ const getOrdersForStore = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const orders = await Order.find({ storeId: store._id })
+    const filter = { storeId: store._id, paymentStatus: 'PAID' };
+
+    const orders = await Order.find(filter)
       .populate('customerId', 'name email')
       .populate('items.productId', 'title imageUrl')
+      .populate('storeId', 'name contact')
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    const total = await Order.countDocuments({ storeId: store._id });
+    const total = await Order.countDocuments(filter);
 
     res.json({
       orders,
@@ -194,6 +232,11 @@ const simulateOrderPayment = async (req, res) => {
     
     order.paymentStatus = 'PAID';
     await order.save();
+    
+    // Deduct stock when simulated
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
+    }
     
     res.json({ message: 'Simulated payment success' });
   } catch (error) {

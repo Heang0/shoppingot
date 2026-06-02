@@ -35,8 +35,8 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
     fetchTheme();
   }, [slug, searchParams]);
 
-  // Hide on product detail pages
-  if (pathname?.includes('/product/')) return null;
+  // Hide on product detail and cart pages
+  if (pathname?.includes('/product/') || pathname?.includes('/cart')) return null;
 
   // Clean paths — middleware rewrites subdomain paths automatically
   const previewTheme = searchParams.get('theme');
@@ -55,28 +55,30 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
   const profileHref = appendParams(`/${locale}/profile`);
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const t = (en: string, km: string) => locale === 'km' ? km : en;
+
   const navItems = [
     {
-      label: 'Home',
+      label: t('Home', 'ទំព័រដើម'),
       href: homeHref,
       icon: Home,
       isActive: pathname === `/${locale}` || pathname === `/${locale}/` || pathname === '/',
     },
     {
-      label: 'Search',
+      label: t('Search', 'ស្វែងរក'),
       onClick: () => setIsSearchOpen(true),
       icon: Search,
       isActive: isSearchOpen,
     },
     {
-      label: 'Cart',
+      label: t('Cart', 'កន្ត្រក'),
       href: cartHref,
       icon: ShoppingCart,
       isActive: pathname?.includes('/cart'),
       badge: totalItems,
     },
     {
-      label: 'Account',
+      label: t('Account', 'គណនី'),
       href: profileHref,
       icon: User,
       isActive: pathname?.includes('/profile'),
@@ -95,37 +97,45 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
   return (
     <>
       <nav className={navClass}>
-        <div className="flex h-16">
-          {navItems.map((item) =>
-            item.onClick ? (
+        <div className="flex h-16 px-2 items-center">
+          {navItems.map((item) => {
+            let itemClass = "flex flex-1 flex-col items-center justify-center gap-0.5 relative h-full transition-all ";
+            let activeStyle: any = { color: item.isActive ? primaryColor : '#9CA3AF' };
+            
+            if (themeStyle === 'neo-brutalism' && item.isActive) {
+              itemClass += " border-2 border-black dark:border-white bg-[#f0f0f0] dark:bg-gray-800 my-1 mx-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] translate-y-[-2px] ";
+              activeStyle = { color: 'black' }; // Neo-brutalism usually prefers harsh contrast over primary color for nav items, but we can keep it black/white
+            }
+
+            return item.onClick ? (
               <button
                 key={item.label}
                 onClick={item.onClick}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5"
-                style={{ color: item.isActive ? primaryColor : '#9CA3AF' }}
+                className={itemClass}
+                style={activeStyle}
               >
-                <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} className={themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white' : ''} />
+                <span className={`text-[10px] font-medium ${themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white font-bold uppercase' : ''}`}>{item.label}</span>
               </button>
             ) : (
               <Link
                 key={item.label}
                 href={item.href!}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5 relative"
-                style={{ color: item.isActive ? primaryColor : '#9CA3AF' }}
+                className={itemClass}
+                style={activeStyle}
               >
                 <div className="relative">
-                  <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} />
+                  <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} className={themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white' : ''} />
                   {mounted && (item.badge ?? 0) > 0 && (
-                    <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
+                    <span className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-500 flex items-center justify-center ${themeStyle === 'neo-brutalism' ? 'rounded-none border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]' : 'rounded-full'}`}>
                       {item.badge}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <span className={`text-[10px] font-medium ${themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white font-bold uppercase' : ''}`}>{item.label}</span>
               </Link>
             )
-          )}
+          })}
         </div>
       </nav>
 

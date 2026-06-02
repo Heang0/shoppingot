@@ -10,8 +10,8 @@ export default getRequestConfig(async ({requestLocale}) => {
   console.log("i18n requested with locale:", locale);
   let resolvedLocale = locale;
   if (!locale || !locales.includes(locale as any)) {
-    console.log("Locale not found, falling back to 'en'");
-    resolvedLocale = 'en';
+    console.log("Locale not found, falling back to 'km'");
+    resolvedLocale = 'km';
   }
  
   return {

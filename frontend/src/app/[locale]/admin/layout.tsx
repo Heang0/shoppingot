@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle } from 'lucide-react';
+import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle, Monitor } from 'lucide-react';
 
 import { useTranslations } from 'next-intl';
 

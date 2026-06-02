@@ -20,14 +20,14 @@ export const getStoreAnalytics = async (req, res) => {
     
     const totalRevenue = paidOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-    // 2. Total Orders Count
-    const totalOrders = await Order.countDocuments({ storeId: store._id });
+    // 2. Total Orders Count (Only PAID)
+    const totalOrders = await Order.countDocuments({ storeId: store._id, paymentStatus: 'PAID' });
 
     // 3. Total Products Count
     const totalProducts = await Product.countDocuments({ storeId: store._id });
 
-    // 4. 5 Most Recent Orders
-    const recentOrders = await Order.find({ storeId: store._id })
+    // 4. 5 Most Recent Orders (Only PAID)
+    const recentOrders = await Order.find({ storeId: store._id, paymentStatus: 'PAID' })
       .populate('customerId', 'name email')
       .populate('items.productId', 'title imageUrl')
       .sort({ createdAt: -1 })

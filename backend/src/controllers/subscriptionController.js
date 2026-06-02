@@ -49,7 +49,8 @@ const generateSubscriptionQR = async (req, res) => {
       superAdminBakongId,
       amount,
       'USD',
-      payment._id.toString()
+      payment._id.toString(),
+      'ShoppingOT Subscriptions'
     );
 
     payment.md5Hash = md5;

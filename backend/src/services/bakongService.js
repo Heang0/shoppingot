@@ -1,6 +1,6 @@
 import { BakongKHQR, MerchantInfo, IndividualInfo, khqrData } from 'bakong-khqr';
 
-export const generateKHQR = async (bakongId, amount, currency, orderId) => {
+export const generateKHQR = async (bakongId, amount, currency, orderId, merchantName) => {
   try {
     const khqr = new BakongKHQR();
 
@@ -10,7 +10,7 @@ export const generateKHQR = async (bakongId, amount, currency, orderId) => {
     // Create IndividualInfo
     const info = new IndividualInfo(
       bakongId || process.env.BAKONG_ACCOUNT_ID,
-      process.env.BAKONG_MERCHANT_NAME || 'ShoppingOT', 
+      merchantName || process.env.BAKONG_MERCHANT_NAME || 'ShoppingOT', 
       process.env.BAKONG_MERCHANT_CITY || 'Phnom Penh',
       {
         amount: Number(amount),

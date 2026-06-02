@@ -2,26 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Product {
   _id: string;
   title: string;
+  titleKm?: string;
   price: number;
   stock: number;
   imageUrl: string;
+  category?: string | { _id: string };
 }
 
 export default function ManageProducts() {
   const user = useAuthStore((state) => state.user);
   const t = useTranslations('AdminProducts');
+  const locale = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [storeId, setStoreId] = useState<string | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [storeCategory, setStoreCategory] = useState<string>('General Retail');
-  
+
   // Form State
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -34,7 +37,9 @@ export default function ManageProducts() {
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [imageUrl, setImageUrl] = useState('');
-  const [variants, setVariants] = useState<{name: string, options: string}[]>([]);
+  const [variants, setVariants] = useState<{ name: string, options: string }[]>([]);
+  const getCategoryName = (category: any) =>
+    locale === 'km' && category.nameKm ? category.nameKm : category.name;
 
   useEffect(() => {
     // 1. Get store id
@@ -109,7 +114,7 @@ export default function ManageProducts() {
 
       const payload = {
         storeId,
-        categoryId: categoryId || undefined,
+        categoryId: categoryId || null,
         title,
         titleKm,
         description,
@@ -120,15 +125,15 @@ export default function ManageProducts() {
         variants: parsedVariants
       };
 
-      const url = editingProduct 
-        ? `http://localhost:5000/api/products/${editingProduct._id}` 
+      const url = editingProduct
+        ? `http://localhost:5000/api/products/${editingProduct._id}`
         : 'http://localhost:5000/api/products';
-        
+
       const method = editingProduct ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user?.token}`
         },
@@ -161,7 +166,7 @@ export default function ManageProducts() {
       console.error(err);
     }
   };
-  
+
   const handleEdit = async (product: any) => {
     // We need to fetch the full product details to get variants and description
     try {
@@ -175,8 +180,9 @@ export default function ManageProducts() {
       setPrice((product.price || 0).toString());
       setStock((product.stock || 0).toString());
       setImageUrl(product.imageUrl || '');
-      setCategoryId(product.categoryId || '');
-      
+      const productCategory = typeof product.category === 'object' ? product.category?._id : product.category;
+      setCategoryId(productCategory ? String(productCategory) : '');
+
       if (product.variants && product.variants.length > 0) {
         setVariants(product.variants.map((v: any) => ({
           name: v.name,
@@ -185,7 +191,7 @@ export default function ManageProducts() {
       } else {
         setVariants([]);
       }
-      
+
       setShowForm(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -198,7 +204,7 @@ export default function ManageProducts() {
       // Clear form when opening for a new product
       setEditingProduct(null);
       setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId('');
-      
+
       if (storeCategory === 'Clothing') {
         setVariants([
           { name: 'Size', options: 'S, M, L, XL' },
@@ -232,7 +238,7 @@ export default function ManageProducts() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('title')}</h2>
-        <button 
+        <button
           onClick={handleToggleForm}
           className="bg-[#E84C3D] text-white px-5 py-2.5 rounded-lg font-medium shadow-sm hover:bg-red-600 transition-colors"
         >
@@ -267,7 +273,7 @@ export default function ManageProducts() {
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors">
                 <option value="">{t('no_category')}</option>
                 {categories.map(cat => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+                  <option key={cat._id} value={cat._id}>{getCategoryName(cat)}</option>
                 ))}
               </select>
             </div>
@@ -291,7 +297,7 @@ export default function ManageProducts() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (KM)</label>
               <textarea rows={3} value={descriptionKm} onChange={e => setDescriptionKm(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
             </div>
-            
+
             <div className="col-span-1 md:col-span-2 border-t border-gray-100 dark:border-gray-800 pt-6 mt-2">
               <div className="flex justify-between items-center mb-4">
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white">{t('variants_optional')}</label>
@@ -347,12 +353,18 @@ export default function ManageProducts() {
                       <img className="h-full w-full object-cover" src={product.imageUrl} alt="" />
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.title}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {locale === 'km' && product.titleKm ? product.titleKm : product.title}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 font-medium">${product.price.toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{product.stock}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.stock > 10 ? 'bg-green-100 text-green-700' : product.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                    {product.stock}
+                  </span>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-3">
                     <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">{t('edit')}</button>
@@ -370,7 +382,7 @@ export default function ManageProducts() {
             )}
           </tbody>
         </table>
-        
+
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-[#111111]">
             <button

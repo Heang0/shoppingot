@@ -53,6 +53,10 @@ const storeSchema = new mongoose.Schema(
       primaryColor: { type: String, default: '#E84C3D' },
       themeStyle: { type: String, enum: ['default', 'minimalist', 'neo-brutalism'], default: 'default' },
     },
+    contact: {
+      phone: { type: String },
+      address: { type: String },
+    },
     isActive: {
       type: Boolean,
       default: true,

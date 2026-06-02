@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { Plus, Trash2, Tag, Edit2, X, Check } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Category {
   _id: string;
   name: string;
+  nameKm?: string;
   slug: string;
   createdAt: string;
 }
@@ -15,6 +16,7 @@ interface Category {
 export default function AdminCategories() {
   const user = useAuthStore((state) => state.user);
   const t = useTranslations('AdminCategories');
+  const locale = useLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -26,6 +28,10 @@ export default function AdminCategories() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editCategoryNameKm, setEditCategoryNameKm] = useState('');
+  const getCategoryName = (category: Category) =>
+    locale === 'km' && category.nameKm ? category.nameKm : category.name;
+  const getSecondaryCategoryName = (category: Category) =>
+    locale === 'km' ? category.name : category.nameKm;
 
   const fetchCategories = async () => {
     try {
@@ -218,7 +224,7 @@ export default function AdminCategories() {
                     ) : (
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-white">
-                          {category.name} <span className="text-gray-500 text-sm font-normal">{(category as any).nameKm ? ` / ${(category as any).nameKm}` : ''}</span>
+                          {getCategoryName(category)} <span className="text-gray-500 text-sm font-normal">{getSecondaryCategoryName(category) ? ` / ${getSecondaryCategoryName(category)}` : ''}</span>
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">/{category.slug}</p>
                       </div>
@@ -230,7 +236,7 @@ export default function AdminCategories() {
                         onClick={() => {
                           setEditingCategory(category);
                           setEditCategoryName(category.name);
-                          setEditCategoryNameKm((category as any).nameKm || '');
+                          setEditCategoryNameKm(category.nameKm || '');
                         }}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         title={t('edit')}

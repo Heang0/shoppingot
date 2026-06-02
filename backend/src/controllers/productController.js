@@ -102,6 +102,8 @@ const createProduct = async (req, res) => {
       price,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=500&q=80', // Default mock image
       stock: stock || 0,
+      barcode: req.body.barcode,
+      sku: req.body.sku,
       variants: variants || [],
       category: categoryId || undefined,
     });
@@ -133,8 +135,23 @@ const updateProduct = async (req, res) => {
       req.body.slug = await generateUniqueSlug(req.body.title, Product);
     }
 
-    Object.assign(product, req.body);
-    const updatedProduct = await product.save();
+    const { categoryId, storeId, category, ...updates } = req.body;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'categoryId')) {
+      if (categoryId) {
+        updates.category = categoryId;
+      } else {
+        updates.$unset = { category: '' };
+      }
+    }
+
+    const { $unset, ...setUpdates } = updates;
+    const updateQuery = { $set: setUpdates };
+    if ($unset) updateQuery.$unset = $unset;
+
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateQuery, {
+      new: true,
+      runValidators: true,
+    });
     res.json(updatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });

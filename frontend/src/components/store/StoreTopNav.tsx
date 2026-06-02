@@ -2,10 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { ChevronLeft, Moon, Sun, Menu, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, Moon, Sun, Menu, ShoppingCart, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StoreSidebarMenu from './StoreSidebarMenu';
+import StoreSearchModal from './StoreSearchModal';
 import { useCartStore } from '@/lib/store/useCartStore';
 
 interface Category {
@@ -27,8 +28,10 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [themeStyle, setThemeStyle] = useState(initialThemeStyle || 'default');
+  const [logoUrl, setLogoUrl] = useState(storeLogo || '');
 
   const items = useCartStore(state => state.items);
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -43,6 +46,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         
         const previewTheme = searchParams.get('theme');
         setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
+        if (store.branding?.logoUrl) setLogoUrl(store.branding.logoUrl);
 
         const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
@@ -69,9 +73,12 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
   const homeHref = appendParams(`/${locale}`);
   const cartHref = appendParams(`/${locale}/cart`);
   const profileHref = appendParams(`/${locale}/profile`);
+  const allLabel = locale === 'km' ? 'ទាំងអស់' : 'All';
 
-  // isHome: either the root or /km (locale only)
-  const isHome = pathname === `/${locale}` || pathname === '/' || pathname === `/${locale}/`;
+  // isHome: either the root or /km (locale only), and no category in the pathname
+  const isCategoryPage = pathname.includes('/category/');
+  const activeCategorySlug = isCategoryPage ? pathname.split('/').pop() : null;
+  const isHome = (pathname === `/${locale}` || pathname === '/' || pathname === `/${locale}/`) && !isCategoryPage;
 
   // Language toggle — swap locale prefix
   const langHref = (() => {
@@ -105,8 +112,8 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
       {/* Top bar */}
       <div className="h-14 md:h-16 flex items-center px-4 md:px-8">
 
-        {/* MOBILE Left: back button (fixed width so logo stays centered) */}
-        <div className="flex md:hidden w-10 shrink-0">
+        {/* MOBILE Left: back button */}
+        <div className="flex md:hidden shrink-0">
           {!isHome && (
             <button
               onClick={() => router.back()}
@@ -117,19 +124,19 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
           )}
         </div>
 
-        {/* MOBILE Center: logo */}
-        <Link href={homeHref} className="flex-1 flex justify-center items-center gap-2 md:hidden">
-          {storeLogo && (
+        {/* MOBILE Left: logo + store name */}
+        <Link href={homeHref} className="flex-1 flex justify-start items-center gap-2 md:hidden overflow-hidden">
+          {logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={storeLogo} alt={storeName} className="h-6 w-auto object-contain shrink-0" />
+            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
           )}
-          <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight truncate max-w-[160px]">
+          <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight truncate">
             {storeName}
           </span>
         </Link>
 
-        {/* MOBILE Right: cart badge + hamburger (fixed width) */}
-        <div className="flex md:hidden w-20 shrink-0 items-center justify-end gap-1">
+        {/* MOBILE Right: cart badge + hamburger */}
+        <div className="flex md:hidden shrink-0 items-center justify-end gap-1">
           <Link href={cartHref} className="relative p-2 text-gray-900 dark:text-white active:opacity-50">
             <ShoppingCart size={22} strokeWidth={1.5} />
             {mounted && totalItems > 0 && (
@@ -148,9 +155,9 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
 
         {/* DESKTOP Left: logo */}
         <Link href={homeHref} className="hidden md:flex items-center gap-2 shrink-0 mr-8">
-          {storeLogo && (
+          {logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={storeLogo} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
+            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
           )}
           <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
             {storeName}
@@ -165,17 +172,26 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
               isHome ? 'text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            All
+            {allLabel}
           </Link>
           {categories.map(cat => (
-            <span key={cat._id} className="text-sm font-medium whitespace-nowrap uppercase tracking-wider text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-default transition-colors">
+            <Link 
+              key={cat._id} 
+              href={appendParams(`/${locale}/category/${(cat as any).slug}`)}
+              className={`text-sm font-medium whitespace-nowrap uppercase tracking-wider transition-colors ${
+                activeCategorySlug === (cat as any).slug ? 'text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
               {locale === 'km' && (cat as any).nameKm ? (cat as any).nameKm : cat.name}
-            </span>
+            </Link>
           ))}
         </nav>
 
-        {/* DESKTOP Right: cart + theme + language */}
+        {/* DESKTOP Right: cart + theme + language + search */}
         <div className="hidden md:flex items-center gap-2 ml-4 shrink-0">
+          <button onClick={() => setIsSearchOpen(true)} className="p-2 text-gray-900 dark:text-white hover:opacity-60 transition-opacity">
+            <Search size={20} strokeWidth={1.5} />
+          </button>
           <Link href={cartHref} className="relative p-2 text-gray-900 dark:text-white hover:opacity-60 transition-opacity">
             <ShoppingCart size={20} strokeWidth={1.5} />
             {mounted && totalItems > 0 && (
@@ -223,6 +239,16 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
       categories={categories}
       themeStyle={themeStyle}
     />
+    
+    {mounted && (
+      <StoreSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        slug={slug}
+        locale={locale}
+        primaryColor={primaryColor}
+      />
+    )}
     </>
   );
 }

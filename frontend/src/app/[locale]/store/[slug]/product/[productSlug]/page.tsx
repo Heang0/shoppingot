@@ -3,7 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, CheckCircle } from 'lucide-react';
+import ProductCard from '@/components/store/ProductCard';
+
+// --- Toast Component ---
+function AddToCartToast({ message, visible }: { message: string; visible: boolean }) {
+  return (
+    <div
+      className={`fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-max md:max-w-sm z-[200] flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium transition-all duration-300 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3 pointer-events-none'
+      }`}
+    >
+      <CheckCircle size={16} strokeWidth={2.5} className="shrink-0" />
+      <span className="truncate">{message}</span>
+    </div>
+  );
+}
 
 export default function ProductDetailPage({ params }: { params: { slug: string, productSlug: string, locale: string } }) {
   const [product, setProduct] = useState<any>(null);
@@ -12,10 +27,29 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
   const [themeStyle, setThemeStyle] = useState('default');
+  const [primaryColor, setPrimaryColor] = useState('#000000');
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   
   const addItem = useCartStore((state) => state.addItem);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isKm = params.locale === 'km';
+  const text = {
+    options: isKm ? 'ជម្រើស' : 'Options',
+    quantity: isKm ? 'ចំនួន' : 'Quantity',
+    addToCart: isKm ? 'បញ្ចូលទៅកន្ត្រក' : 'Add to Cart',
+    addedToCart: isKm ? 'បានបញ្ចូលទៅកន្ត្រក!' : 'Added to cart!',
+    productNotFound: isKm ? 'រកមិនឃើញផលិតផល' : 'Product not found',
+    goBack: isKm ? 'ត្រឡប់ក្រោយ' : 'Go Back',
+    selectPrefix: isKm ? 'សូមជ្រើសរើស' : 'Please select a',
+    relatedProducts: isKm ? 'ផលិតផលស្រដៀងគ្នា' : 'You might also like',
+  };
+
+  const showToast = (product: any) => {
+    setToast({ message: `${product.title} added to cart!`, visible: true });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 2500);
+  };
 
   useEffect(() => {
     const fetchProductAndStore = async () => {
@@ -32,6 +66,24 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
           const store = await storeRes.json();
           const previewTheme = searchParams.get('theme');
           setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
+          setPrimaryColor(store.branding?.primaryColor || '#000000');
+          
+          // Fetch all store products to find related ones
+          const allProdRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+          if (allProdRes.ok) {
+            const prodData = await allProdRes.json();
+            const allProducts = prodData.products || [];
+            
+            // Filter by same category and exclude current product
+            const pCat = data.category?._id ?? data.category;
+            const related = allProducts.filter((p: any) => {
+              const catId = p.category?._id ?? p.category;
+              return String(catId) === String(pCat) && String(p._id) !== String(data._id);
+            });
+            
+            // Limit to 4 for desktop view nicely
+            setRelatedProducts(related.slice(0, 4));
+          }
         }
       } catch (err) {
         console.error(err);
@@ -50,7 +102,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
     if (product.variants && product.variants.length > 0) {
       const missing = product.variants.find((v: any) => !selectedVariants[v.name]);
       if (missing) {
-        alert(`Please select a ${missing.name}`);
+        alert(`${text.selectPrefix} ${missing.name}`);
         return;
       }
     }
@@ -58,13 +110,14 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
     addItem({
       productId: product._id,
       title: product.title,
+      titleKm: product.titleKm,
       price: product.price,
       quantity,
       imageUrl: product.imageUrl,
       selectedVariants,
     });
 
-    setAddedMessage('Added to cart!');
+    setAddedMessage(text.addedToCart);
     setTimeout(() => {
       setAddedMessage(null);
       // Optional: router.back() or redirect to cart
@@ -82,14 +135,17 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
   if (!product) {
     return (
       <div className="h-full flex items-center justify-center flex-col min-h-[60vh]">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Product not found</h2>
-        <button onClick={() => router.back()} className="mt-4 text-[#E84C3D]">Go Back</button>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{text.productNotFound}</h2>
+        <button onClick={() => router.back()} className="mt-4 text-[#E84C3D]">{text.goBack}</button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-full bg-white dark:bg-[#111111] relative pb-28 md:pb-12">
+      {/* Add-to-cart Toast for related products */}
+      <AddToCartToast message={toast.message} visible={toast.visible} />
+
       {/* Toast Notification */}
       {addedMessage && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-6 py-3 rounded-full z-50 shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-4">
@@ -99,7 +155,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
 
       <div className="md:max-w-7xl md:mx-auto md:w-full md:grid md:grid-cols-2 md:gap-12 md:px-5 md:py-12">
         {/* Product Image */}
-        <div className="w-full aspect-[4/5] md:aspect-square bg-gray-50 dark:bg-gray-900 relative md:rounded-3xl overflow-hidden shrink-0">
+        <div className="w-full aspect-square bg-gray-50 dark:bg-gray-900 relative md:rounded-3xl overflow-hidden shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
         </div>
@@ -120,7 +176,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
         {/* Variants Selection */}
         {product.variants && product.variants.length > 0 && (
           <div className="mt-8 space-y-6">
-            <h3 className="font-medium text-gray-900 dark:text-white pb-2">Options</h3>
+            <h3 className="font-medium text-gray-900 dark:text-white pb-2">{text.options}</h3>
             {product.variants.map((variant: any) => (
               <div key={variant.name}>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">{variant.name}</label>
@@ -151,7 +207,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
 
         {/* Quantity Selection */}
         <div className="mt-8 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-6">
-          <span className="font-bold text-gray-900 dark:text-white">Quantity</span>
+          <span className="font-bold text-gray-900 dark:text-white">{text.quantity}</span>
           <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-1">
             <button 
               onClick={() => setQuantity(Math.max(1, quantity - 1))} 
@@ -181,11 +237,29 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
                 : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98]'
             }`}
           >
-            Add to Cart - ${(product.price * quantity).toFixed(2)}
+            {text.addToCart} - ${(product.price * quantity).toFixed(2)}
           </button>
         </div>
       </div>
       </div>
+
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <div className="max-w-7xl mx-auto w-full px-5 py-8 md:py-16 md:border-t border-gray-100 dark:border-gray-800">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6 md:mb-8">{text.relatedProducts}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-8">
+            {relatedProducts.map(rp => (
+              <ProductCard
+                key={rp._id}
+                product={rp}
+                primaryColor={primaryColor}
+                themeStyle={themeStyle}
+                onAddToCart={showToast}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sticky Bottom Add to Cart (Mobile Only) */}
       <div className={`md:hidden sticky bottom-0 left-0 w-full bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md p-4 pb-safe z-40 border-t ${themeStyle === 'neo-brutalism' ? 'border-t-[3px] border-black dark:border-white' : 'border-gray-100 dark:border-gray-800'} shadow-[0_-10px_40px_rgba(0,0,0,0.05)]`}>
@@ -199,7 +273,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
                 : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl'
             }`}
         >
-          Add to Cart - ${(product.price * quantity).toFixed(2)}
+          {text.addToCart} - ${(product.price * quantity).toFixed(2)}
         </button>
       </div>
     </div>

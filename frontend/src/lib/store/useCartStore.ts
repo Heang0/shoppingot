@@ -5,6 +5,7 @@ export interface CartItem {
   cartItemId: string; // Composite key: productId + variants
   productId: string;
   title: string;
+  titleKm?: string;
   price: number;
   quantity: number;
   imageUrl?: string;
@@ -18,6 +19,8 @@ interface CartState {
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
 // Helper to generate a unique ID for a cart item based on its variants
@@ -35,6 +38,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       addItem: (item) => {
         const items = get().items;
         const cartItemId = generateCartItemId(item.productId, item.selectedVariants);
@@ -67,6 +72,9 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'cart-storage',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
-import { User, Store as StoreIcon, Copy, Check } from 'lucide-react';
+import { User, Store as StoreIcon, Copy, Check, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -20,6 +20,10 @@ interface Store {
     logoUrl?: string;
     bannerUrl?: string;
     primaryColor?: string;
+  };
+  contact?: {
+    phone?: string;
+    address?: string;
   };
 }
 
@@ -42,7 +46,7 @@ export default function AdminSettings() {
   const baseDomain = useBaseDomain();
   const t = useTranslations('AdminSettings');
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'store'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'store' | 'payment'>('profile');
   
   // Profile Form
   const [profileData, setProfileData] = useState({
@@ -146,7 +150,8 @@ export default function AdminSettings() {
           name: storeData.name,
           slug: storeData.slug,
           category: storeData.category || 'General Retail',
-          branding: storeData.branding
+          branding: storeData.branding,
+          contact: storeData.contact,
         })
       });
       if (res.ok) {
@@ -199,17 +204,28 @@ export default function AdminSettings() {
           setProfileData({ ...profileData, profilePic: data.url });
           setProfileUploaded(true);
         } else if (type === 'storeLogo' && storeData) {
-          setStoreData({ 
-            ...storeData, 
-            branding: { ...storeData.branding, logoUrl: data.url } 
-          });
+          const newBranding = { ...storeData.branding, logoUrl: data.url };
+          setStoreData({ ...storeData, branding: newBranding });
           setLogoUploaded(true);
-        } else if (type === 'banner' && storeData) {
-          setStoreData({ 
-            ...storeData, 
-            branding: { ...storeData.branding, bannerUrl: data.url } 
+          // Auto-save to DB immediately so it persists on refresh
+          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
+            body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })
           });
-          setSuccessMsg('Banner uploaded successfully');
+          setSuccessMsg('Logo saved successfully!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+          window.dispatchEvent(new CustomEvent('storeUpdated'));
+        } else if (type === 'banner' && storeData) {
+          const newBranding = { ...storeData.branding, bannerUrl: data.url };
+          setStoreData({ ...storeData, branding: newBranding });
+          // Auto-save to DB immediately so it persists on refresh
+          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
+            body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })
+          });
+          setSuccessMsg('Banner saved successfully!');
           setTimeout(() => setSuccessMsg(''), 3000);
         }
       } else {
@@ -250,6 +266,16 @@ export default function AdminSettings() {
           }`}
         >
           {t('store_settings')}
+        </button>
+        <button
+          onClick={() => { setActiveTab('payment'); setSuccessMsg(''); }}
+          className={`pb-4 px-4 font-medium transition-colors border-b-2 ${
+            activeTab === 'payment' 
+              ? 'border-[#E84C3D] text-[#E84C3D]' 
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          {t('payment_settings')}
         </button>
       </div>
 
@@ -405,46 +431,32 @@ export default function AdminSettings() {
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('category_warning')}</p>
               </div>
 
-              <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('payment_settings')}</h3>
-                
-                {storeData?.plan?.planId?.name === 'Free' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-800/50">
-                    Bakong payments are only available on Pro and Premium plans. Please upgrade to unlock.
-                  </div>
-                )}
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('bakong_id')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Phone Number</label>
                   <input
                     type="text"
-                    value={storeData.paymentSettings?.bakongId || ''}
-                    onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, bakongId: e.target.value } })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="example@bkrt"
-                    disabled={storeData?.plan?.planId?.name === 'Free'}
+                    value={storeData.contact?.phone || ''}
+                    onChange={(e) => setStoreData({ ...storeData, contact: { ...storeData.contact, phone: e.target.value } })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+                    placeholder="e.g. +855 12 345 678"
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('bakong_warning')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('currency')}</label>
-                  <select 
-                    value={storeData.paymentSettings?.currency || 'USD'} 
-                    onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, currency: e.target.value } })} 
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="KHR">KHR</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Address</label>
+                  <textarea
+                    value={storeData.contact?.address || ''}
+                    onChange={(e) => setStoreData({ ...storeData, contact: { ...storeData.contact, address: e.target.value } })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors h-24"
+                    placeholder="Your physical store or return address"
+                  />
                 </div>
-              </div>
 
               <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('store_branding')}</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store Banner</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_banner')}</label>
                   <div className="flex items-center space-x-4">
                     {storeData.branding?.bannerUrl && (
                       <div className="h-16 w-32 rounded bg-gray-200 dark:bg-gray-800 overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
@@ -453,7 +465,7 @@ export default function AdminSettings() {
                     )}
                     <div>
                       <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
-                        {uploading ? t('uploading') : 'Upload Banner'}
+                        {uploading ? t('uploading') : t('upload_banner')}
                         <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading} />
                       </label>
                     </div>
@@ -463,11 +475,11 @@ export default function AdminSettings() {
                 <div>
                   <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">Theme & Design Customizer</h4>
-                      <p className="text-sm text-gray-500 mt-1">Change your store's primary color and visual style.</p>
+                      <h4 className="font-bold text-gray-900 dark:text-white">{t('theme_customizer_title')}</h4>
+                      <p className="text-sm text-gray-500 mt-1">{t('theme_customizer_desc')}</p>
                     </div>
                     <Link href="/admin/settings/theme" className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors">
-                      Customize Theme &rarr;
+                      {t('customize_theme_btn')}
                     </Link>
                   </div>
                 </div>
@@ -485,6 +497,70 @@ export default function AdminSettings() {
             </form>
           ) : (
             <p className="text-gray-500 dark:text-gray-400 py-8 text-center">{t('setup_store_first')}</p>
+          )
+        )}
+
+        {/* Payment Settings Tab */}
+        {activeTab === 'payment' && (
+          storeData ? (
+            <form onSubmit={handleStoreSubmit} className="space-y-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('payment_settings')}</h3>
+              
+              <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800 space-y-6">
+                {(storeData as any)?.plan?.planId?.name === 'Free' && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-800/50 flex items-start gap-3">
+                    <span className="text-xl">⚠️</span>
+                    <div>
+                      <p className="font-semibold">Upgrade Required</p>
+                      <p className="mt-1">KHQR automatic payments are only available on Pro and Premium plans. Please upgrade to unlock.</p>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('bakong_id')}</label>
+                  <input
+                    type="text"
+                    value={storeData.paymentSettings?.bakongId || ''}
+                    onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, bakongId: e.target.value } })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="e.g. yourbusiness@bkrt"
+                    disabled={(storeData as any)?.plan?.planId?.name === 'Free'}
+                  />
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bakong_warning')}</p>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('currency')}</label>
+                  <select 
+                    value={storeData.paymentSettings?.currency || 'USD'} 
+                    onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, currency: e.target.value } })} 
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                  >
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="KHR">KHR (Khmer Riel)</option>
+                  </select>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Choose the default currency for generating your KHQR codes.</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-6">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#E84C3D] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E84C3D] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save size={20} />
+                  )}
+                  {t('save_changes')}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400">Loading payment settings...</p>
           )
         )}
       </div>

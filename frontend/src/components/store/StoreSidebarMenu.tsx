@@ -20,6 +20,7 @@ export default function StoreSidebarMenu({
   locale,
   slug,
   categories = [],
+  themeStyle = 'default',
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -55,6 +56,7 @@ export default function StoreSidebarMenu({
   const homeHref = appendParams(`/${locale}`);
   const cartHref = appendParams(`/${locale}/cart`);
   const profileHref = appendParams(`/${locale}/profile`);
+  const categoryTitle = locale === 'km' ? 'ប្រភេទ' : 'Categories';
 
   const langHref = (() => {
     let basePath = `/${locale === 'en' ? 'km' : 'en'}`;
@@ -91,7 +93,7 @@ export default function StoreSidebarMenu({
           <div className="flex items-center gap-2 min-w-0">
             {storeLogo && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={storeLogo} alt={storeName} className="h-6 w-auto object-contain shrink-0" />
+              <img src={storeLogo.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-6 w-auto object-contain shrink-0" />
             )}
             <span className="font-bold text-gray-900 dark:text-white truncate">{storeName}</span>
           </div>
@@ -115,12 +117,12 @@ export default function StoreSidebarMenu({
           {categories.length > 0 && (
             <>
               <p className="mt-6 mb-2 text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">
-                Categories
+                {categoryTitle}
               </p>
               {categories.map(cat => (
                 <Link
                   key={cat._id}
-                  href={homeHref}
+                  href={appendParams(`/${locale}/category/${(cat as any).slug}`)}
                   onClick={onClose}
                   className="py-2.5 text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0"
                 >

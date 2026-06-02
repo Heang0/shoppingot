@@ -93,7 +93,12 @@
     "currency": "Currency",
     "store_branding": "Store Branding",
     "primary_color": "Primary Brand Color",
-    "setup_store_first": "You need to set up a store first."
+    "store_banner": "Store Banner",
+    "upload_banner": "Upload Banner",
+    "theme_customizer_title": "Theme & Design Customizer",
+    "theme_customizer_desc": "Change your store's primary color and visual style.",
+    "customize_theme_btn": "Customize Theme →",
+    "setup_store_first": "You must set up a store first."
   },
   "AdminCategories": {
     "title": "Product Categories",
@@ -168,7 +173,13 @@
     "next": "Next",
     "page": "Page",
     "of": "of",
-    "failed_update": "Failed to update order status"
+    "failed_update": "Failed to update order status",
+    "order_details": "Order Details",
+    "customer_info": "Customer Info",
+    "delivery": "Delivery",
+    "registered_address_na": "Registered Address (N/A)",
+    "order_items": "Order Items",
+    "total_paid_khqr": "Total Paid (KHQR)"
   },
   "AdminUpgrade": {
     "title": "Upgrade Your Plan",
