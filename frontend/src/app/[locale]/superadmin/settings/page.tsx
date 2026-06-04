@@ -24,7 +24,7 @@ export default function SuperadminSettings() {
     setSuccessMsg('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const res = await fetch('http://192.168.1.7:5000/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +58,7 @@ export default function SuperadminSettings() {
     uploadData.append('image', file);
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload', {
+      const res = await fetch('http://192.168.1.7:5000/api/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${user?.token}` },
         body: uploadData

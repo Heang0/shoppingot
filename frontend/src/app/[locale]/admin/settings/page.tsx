@@ -88,7 +88,7 @@ export default function AdminSettings() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/stores', {
+        const res = await fetch('http://192.168.1.7:5000/api/stores', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         const stores = await res.json();
@@ -110,7 +110,7 @@ export default function AdminSettings() {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const res = await fetch('http://192.168.1.7:5000/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export default function AdminSettings() {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const res = await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -152,11 +152,12 @@ export default function AdminSettings() {
           category: storeData.category || 'General Retail',
           branding: storeData.branding,
           contact: storeData.contact,
+          deliverySettings: storeData.deliverySettings,
         })
       });
       if (res.ok) {
         // Also update payment settings
-        await fetch(`http://localhost:5000/api/stores/${storeData._id}/payment-settings`, {
+        await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}/payment-settings`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -193,7 +194,7 @@ export default function AdminSettings() {
     uploadData.append('image', file);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/upload?type=${type}`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/upload?type=${type}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user?.token}` },
         body: uploadData
@@ -208,7 +209,7 @@ export default function AdminSettings() {
           setStoreData({ ...storeData, branding: newBranding });
           setLogoUploaded(true);
           // Auto-save to DB immediately so it persists on refresh
-          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
+          await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
             body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })
@@ -220,7 +221,7 @@ export default function AdminSettings() {
           const newBranding = { ...storeData.branding, bannerUrl: data.url };
           setStoreData({ ...storeData, branding: newBranding });
           // Auto-save to DB immediately so it persists on refresh
-          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
+          await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
             body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })
@@ -451,6 +452,48 @@ export default function AdminSettings() {
                     placeholder="Your physical store or return address"
                   />
                 </div>
+
+              <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delivery Settings</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="freeDelivery" 
+                      checked={storeData.deliverySettings?.isFreeDeliveryEnabled || false}
+                      onChange={(e) => setStoreData({ 
+                        ...storeData, 
+                        deliverySettings: { ...storeData.deliverySettings, isFreeDeliveryEnabled: e.target.checked } 
+                      })}
+                      className="w-5 h-5 text-[#E84C3D] rounded focus:ring-[#E84C3D]"
+                    />
+                    <label htmlFor="freeDelivery" className="text-sm font-medium text-gray-900 dark:text-white">
+                      Enable "Buy $... Up To Get Free Delivery"
+                    </label>
+                  </div>
+                  
+                  {storeData.deliverySettings?.isFreeDeliveryEnabled && (
+                    <div className="pl-8">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Minimum Purchase for Free Delivery ($)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={storeData.deliverySettings?.freeDeliveryThreshold || ''}
+                        onChange={(e) => setStoreData({ 
+                          ...storeData, 
+                          deliverySettings: { ...storeData.deliverySettings, freeDeliveryThreshold: Number(e.target.value) } 
+                        })}
+                        className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+                        placeholder="e.g. 50"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('store_branding')}</h3>

@@ -35,7 +35,7 @@ export default function AdminCategories() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/categories', {
+      const res = await fetch('http://192.168.1.7:5000/api/categories', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -58,7 +58,7 @@ export default function AdminCategories() {
     setSubmitting(true);
     setErrorMsg('');
     try {
-      const res = await fetch('http://localhost:5000/api/categories', {
+      const res = await fetch('http://192.168.1.7:5000/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export default function AdminCategories() {
     if (!editCategoryName.trim()) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/categories/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ export default function AdminCategories() {
     if (!confirm(t('confirm_delete'))) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/categories/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });

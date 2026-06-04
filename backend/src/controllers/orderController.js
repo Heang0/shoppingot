@@ -1,6 +1,7 @@
 import Order from '../models/Order.js';
 import Store from '../models/Store.js';
 import Product from '../models/Product.js';
+import PromoCode from '../models/PromoCode.js';
 import { generateKHQR, verifyKHQRTransaction } from '../services/bakongService.js';
 
 // @desc    Create Order & Generate QR
@@ -8,7 +9,7 @@ import { generateKHQR, verifyKHQRTransaction } from '../services/bakongService.j
 // @access  Private (Customer)
 const createOrderAndGenerateQR = async (req, res) => {
   try {
-    const { storeId, items, totalAmount, guestInfo, deliveryPartner, deliveryFee, deliveryNote, subtotal, orderSource, paymentMethod, cashReceived, changeGiven } = req.body;
+    const { storeId, items, totalAmount, guestInfo, deliveryPartner, deliveryFee, deliveryNote, subtotal, orderSource, paymentMethod, cashReceived, changeGiven, promoCode } = req.body;
 
     const store = await Store.findById(storeId);
 
@@ -25,17 +26,45 @@ const createOrderAndGenerateQR = async (req, res) => {
 
     const isPOS = orderSource === 'POS';
 
+    // Validate and Apply Promo Code
+    let discountApplied = 0;
+    let finalTotalAmount = totalAmount;
+    let appliedPromoCode = undefined;
+
+    if (promoCode) {
+      const promo = await PromoCode.findOne({ storeId, code: promoCode.toUpperCase() });
+      if (promo && promo.isActive && (!promo.validUntil || new Date() <= promo.validUntil) && (!promo.usageLimit || promo.usedCount < promo.usageLimit)) {
+        if (subtotal >= promo.minPurchase) {
+          if (promo.discountType === 'FIXED') {
+            discountApplied = promo.discountValue;
+          } else if (promo.discountType === 'PERCENTAGE') {
+            discountApplied = (subtotal * promo.discountValue) / 100;
+          }
+          if (discountApplied > subtotal) discountApplied = subtotal;
+
+          finalTotalAmount = subtotal - discountApplied + (deliveryFee || 0);
+          appliedPromoCode = promo.code;
+
+          // Increment usage count
+          promo.usedCount += 1;
+          await promo.save();
+        }
+      }
+    }
+
     const order = new Order({
       storeId,
       customerId,
       isGuest,
-      guestInfo: isGuest ? guestInfo : undefined,
+      guestInfo,
       items,
-      totalAmount,
+      totalAmount: finalTotalAmount,
       subtotal: subtotal || totalAmount,
       deliveryPartner,
       deliveryFee: deliveryFee || 0,
       deliveryNote,
+      promoCode: appliedPromoCode,
+      discountApplied,
       orderSource: isPOS ? 'POS' : 'ONLINE',
       paymentMethod: paymentMethod || 'KHQR',
       paymentStatus: paymentMethod === 'CASH' ? 'PAID' : 'PENDING',
@@ -71,15 +100,23 @@ const createOrderAndGenerateQR = async (req, res) => {
     );
 
     order.bakongMd5 = md5;
+    order.qrString = qrString;
     await order.save();
+
+    let deepLink = null;
+    if (order.paymentMethod === 'bakong_app') {
+      const { generateBakongDeepLink } = await import('../services/bakongService.js');
+      deepLink = await generateBakongDeepLink(qrString);
+    }
 
     res.status(201).json({
       orderId: order._id,
       qrString,
       md5,
-      totalAmount,
+      totalAmount: finalTotalAmount,
       currency: store.paymentSettings.currency,
-      status: 'PENDING'
+      status: 'PENDING',
+      deepLink
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

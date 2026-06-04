@@ -21,7 +21,7 @@ export default function OrderTracking() {
   const fetchOrders = async (page: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/store?page=${page}&limit=10`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/orders/store?page=${page}&limit=10`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -38,7 +38,7 @@ export default function OrderTracking() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -193,8 +193,9 @@ export default function OrderTracking() {
                     </div>
                   ) : (
                     <div className="text-sm space-y-1">
-                      <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.customerId?.name}</p>
-                      <p className="text-gray-600 dark:text-gray-400">{selectedOrder.customerId?.email}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.guestInfo?.name || selectedOrder.customerId?.name}</p>
+                      <p className="text-gray-600 dark:text-gray-400 font-mono">{selectedOrder.guestInfo?.phone}</p>
+                      <p className="text-gray-500 dark:text-gray-500 text-xs">{selectedOrder.customerId?.email}</p>
                     </div>
                   )}
                 </div>
@@ -203,7 +204,7 @@ export default function OrderTracking() {
                   <div className="text-sm space-y-1">
                     <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.deliveryPartner || 'J&T Express'}</p>
                     <p className="text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-2 rounded-lg mt-2 leading-relaxed">
-                      {selectedOrder.isGuest ? selectedOrder.guestInfo?.address : t('registered_address_na')}
+                      {selectedOrder.guestInfo?.address || 'No address provided'}
                     </p>
                   </div>
                 </div>

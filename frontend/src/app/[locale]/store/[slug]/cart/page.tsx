@@ -11,6 +11,7 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
 
   const [mounted, setMounted] = useState(false);
   const [themeStyle, setThemeStyle] = useState('default');
+  const [primaryColor, setPrimaryColor] = useState('#000000');
   const searchParams = useSearchParams();
   const isKm = params.locale === 'km';
   
@@ -25,11 +26,13 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
 
   useEffect(() => {
     setMounted(true);
-    fetch(`http://localhost:5000/api/stores/${params.slug}`)
+    fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`)
       .then(res => res.json())
       .then(data => {
         const previewTheme = searchParams.get('theme');
+        const previewColor = searchParams.get('color');
         setThemeStyle(previewTheme || data.branding?.themeStyle || 'default');
+        setPrimaryColor(previewColor || data.branding?.primaryColor || '#000000');
       })
       .catch(console.error);
   }, [params.slug, searchParams]);
@@ -46,7 +49,11 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{text.cartEmpty}</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8">{text.cartEmptyDesc}</p>
-        <Link href={`/${params.locale}`} className="bg-black dark:bg-white text-white dark:text-black font-semibold px-8 py-3 rounded-full hover:scale-105 transition-transform">
+        <Link 
+          href={`/${params.locale}`} 
+          className="text-white font-semibold px-8 py-3 rounded-full hover:scale-105 transition-transform"
+          style={{ backgroundColor: primaryColor || '#000' }}
+        >
           {text.startShopping}
         </Link>
       </div>
@@ -103,11 +110,12 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
           
           <button 
             onClick={() => router.push(`/${params.locale}/checkout`)}
-            className={`w-full py-4 text-lg font-bold transition-all flex items-center justify-center gap-2 ${
-              themeStyle === 'neo-brutalism' ? 'bg-black text-white dark:bg-white dark:text-black border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest' :
-              themeStyle === 'minimalist' ? 'bg-black text-white dark:bg-white dark:text-black rounded-sm tracking-widest uppercase hover:bg-gray-800' :
-              'bg-black dark:bg-white text-white dark:text-black rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98]'
+            className={`w-full py-4 text-lg font-bold text-white transition-all flex items-center justify-center gap-2 ${
+              themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest' :
+              themeStyle === 'minimalist' ? 'rounded-sm tracking-widest uppercase hover:opacity-90' :
+              'rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98]'
             }`}
+            style={{ backgroundColor: primaryColor || '#000' }}
           >
             {text.proceedCheckout}
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>

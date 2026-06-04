@@ -11,7 +11,9 @@ interface Product {
   price: number;
   stock: number;
   imageUrl: string;
+  images?: string[];
   category?: string | { _id: string };
+  isBestSeller?: boolean;
 }
 
 export default function ManageProducts() {
@@ -37,13 +39,15 @@ export default function ManageProducts() {
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [variants, setVariants] = useState<{ name: string, options: string }[]>([]);
+  const [isBestSeller, setIsBestSeller] = useState(false);
   const getCategoryName = (category: any) =>
     locale === 'km' && category.nameKm ? category.nameKm : category.name;
 
   useEffect(() => {
     // 1. Get store id
-    fetch('http://localhost:5000/api/stores', {
+    fetch('http://192.168.1.7:5000/api/stores', {
       headers: { Authorization: `Bearer ${user?.token}` }
     })
       .then(res => res.json())
@@ -58,7 +62,7 @@ export default function ManageProducts() {
       .catch(console.error);
 
     // 2. Fetch categories
-    fetch('http://localhost:5000/api/categories', {
+    fetch('http://192.168.1.7:5000/api/categories', {
       headers: { Authorization: `Bearer ${user?.token}` }
     })
       .then(res => res.json())
@@ -70,7 +74,7 @@ export default function ManageProducts() {
 
   const fetchProducts = async (sid: string, page: number = 1) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/store/${sid}?page=${page}&limit=10`);
+      const res = await fetch(`http://192.168.1.7:5000/api/products/store/${sid}?page=${page}&limit=10`);
       const data = await res.json();
       if (res.ok) {
         setProducts(data.products || []);
@@ -89,7 +93,7 @@ export default function ManageProducts() {
     formData.append('image', file);
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload?type=product', {
+      const res = await fetch('http://192.168.1.7:5000/api/upload?type=product', {
         method: 'POST',
         body: formData, // No Auth headers for this mock public route
       });
@@ -97,6 +101,31 @@ export default function ManageProducts() {
       if (res.ok) setImageUrl(data.url);
     } catch (err) {
       console.error('Upload error', err);
+    }
+  };
+
+  const handleExtraUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const remainingSlots = 3 - images.length;
+    if (remainingSlots <= 0) return alert('Max 3 extra images allowed');
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+    for (const file of filesToUpload) {
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await fetch('http://192.168.1.7:5000/api/upload?type=product', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok) setImages(prev => [...prev, data.url]);
+      } catch (err) {
+        console.error('Upload error', err);
+      }
     }
   };
 
@@ -122,12 +151,14 @@ export default function ManageProducts() {
         price: Number(price),
         stock: Number(stock),
         imageUrl,
+        images,
+        isBestSeller,
         variants: parsedVariants
       };
 
       const url = editingProduct
-        ? `http://localhost:5000/api/products/${editingProduct._id}`
-        : 'http://localhost:5000/api/products';
+        ? `http://192.168.1.7:5000/api/products/${editingProduct._id}`
+        : 'http://192.168.1.7:5000/api/products';
 
       const method = editingProduct ? 'PUT' : 'POST';
 
@@ -143,7 +174,7 @@ export default function ManageProducts() {
       if (res.ok) {
         setShowForm(false);
         setEditingProduct(null);
-        setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId(''); setVariants([]);
+        setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setImages([]); setCategoryId(''); setVariants([]); setIsBestSeller(false);
         fetchProducts(storeId, currentPage);
       } else {
         const data = await res.json();
@@ -157,11 +188,32 @@ export default function ManageProducts() {
   const handleDelete = async (id: string) => {
     if (!confirm(t('confirm_delete'))) return;
     try {
-      await fetch(`http://localhost:5000/api/products/${id}`, {
+      await fetch(`http://192.168.1.7:5000/api/products/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       if (storeId) fetchProducts(storeId, currentPage);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleFlag = async (productId: string, flag: 'isBestSeller', currentValue: boolean) => {
+    try {
+      const res = await fetch(`http://192.168.1.7:5000/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`
+        },
+        body: JSON.stringify({
+          [flag]: !currentValue
+        }),
+      });
+
+      if (res.ok && storeId) {
+        fetchProducts(storeId, currentPage);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -180,6 +232,8 @@ export default function ManageProducts() {
       setPrice((product.price || 0).toString());
       setStock((product.stock || 0).toString());
       setImageUrl(product.imageUrl || '');
+      setImages(product.images || []);
+      setIsBestSeller(product.isBestSeller || false);
       const productCategory = typeof product.category === 'object' ? product.category?._id : product.category;
       setCategoryId(productCategory ? String(productCategory) : '');
 
@@ -203,7 +257,7 @@ export default function ManageProducts() {
     if (!showForm) {
       // Clear form when opening for a new product
       setEditingProduct(null);
-      setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setCategoryId('');
+      setTitle(''); setTitleKm(''); setDescription(''); setDescriptionKm(''); setPrice(''); setStock(''); setImageUrl(''); setImages([]); setCategoryId(''); setIsBestSeller(false);
 
       if (storeCategory === 'Clothing') {
         setVariants([
@@ -278,17 +332,43 @@ export default function ManageProducts() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('image_upload')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('image_upload')} (Main)</label>
               <div className="flex gap-4 items-center">
                 <input type="file" accept="image/*" onChange={handleUpload} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 dark:file:bg-red-900/20 dark:file:text-red-400" />
                 {imageUrl && (
-                  <div className="w-12 h-12 shrink-0 rounded overflow-hidden border border-gray-200 dark:border-gray-700">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="w-12 h-12 shrink-0 rounded overflow-hidden border border-gray-200 dark:border-gray-700 relative group">
                     <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setImageUrl('')} className="absolute top-0 right-0 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                   </div>
                 )}
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gallery Images (Max 3)</label>
+              <div className="flex flex-col gap-2">
+                <input type="file" multiple accept="image/*" onChange={handleExtraUpload} disabled={images.length >= 3} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400 disabled:opacity-50" />
+                {images.length > 0 && (
+                  <div className="flex gap-2">
+                    {images.map((img, i) => (
+                      <div key={i} className="w-12 h-12 shrink-0 rounded overflow-hidden border border-gray-200 dark:border-gray-700 relative group">
+                        <img src={img} alt="Gallery" className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="absolute top-0 right-0 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Flags</label>
+              <div className="flex flex-wrap gap-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={isBestSeller} onChange={(e) => setIsBestSeller(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#E84C3D] focus:ring-[#E84C3D]" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Best Seller</span>
+                </label>
+              </div>
+            </div>
+
             <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (EN)</label>
               <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
@@ -340,6 +420,7 @@ export default function ManageProducts() {
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('product')}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('price')}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('stock')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{locale === 'km' ? 'លក់ដាច់បំផុត' : 'Best Seller'}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('actions')}</th>
             </tr>
           </thead>
@@ -365,6 +446,18 @@ export default function ManageProducts() {
                     {product.stock}
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    onClick={() => handleToggleFlag(product._id, 'isBestSeller', product.isBestSeller || false)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      product.isBestSeller
+                        ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    {product.isBestSeller ? (locale === 'km' ? 'បាទ/ចាស' : 'Yes') : (locale === 'km' ? 'ទេ' : 'No')}
+                  </button>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-3">
                     <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors">{t('edit')}</button>
@@ -375,7 +468,7 @@ export default function ManageProducts() {
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   {t('no_products')}
                 </td>
               </tr>

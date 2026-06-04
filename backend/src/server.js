@@ -24,6 +24,7 @@ import superadminRoutes from './routes/superadminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import promoRoutes from './routes/promoRoutes.js';
 
 import path from 'path';
 
@@ -38,8 +39,8 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    // Allow localhost and any subdomains on localhost:3000
-    if (origin.match(/^http:\/\/(?:[a-zA-Z0-9-]+\.)?localhost:3000$/)) {
+    // Allow localhost, subdomains, specific local IP, and nip.io for mobile testing
+    if (origin.match(/^http:\/\/(?:[a-zA-Z0-9-]+\.)?(localhost|192\.168\.1\.7|192\.168\.1\.7\.nip\.io):3000$/)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'), false);
@@ -85,6 +86,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/promos', promoRoutes);
 app.use('/api/upload', uploadRoutes);
 
 app.get('/', (req, res) => {

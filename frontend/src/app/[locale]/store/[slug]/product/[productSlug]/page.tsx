@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Minus, Plus, CheckCircle } from 'lucide-react';
+import { Minus, Plus, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/store/ProductCard';
 
 // --- Toast Component ---
@@ -30,8 +30,10 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
   const [primaryColor, setPrimaryColor] = useState('#000000');
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const addItem = useCartStore((state) => state.addItem);
+  const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
   const router = useRouter();
   const searchParams = useSearchParams();
   const isKm = params.locale === 'km';
@@ -55,8 +57,8 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
     const fetchProductAndStore = async () => {
       try {
         const [prodRes, storeRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/products/${params.productSlug}`),
-          fetch(`http://localhost:5000/api/stores/${params.slug}`)
+          fetch(`http://192.168.1.7:5000/api/products/${params.productSlug}`),
+          fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`)
         ]);
         if (!prodRes.ok) throw new Error('Failed to load product');
         const data = await prodRes.json();
@@ -69,7 +71,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
           setPrimaryColor(store.branding?.primaryColor || '#000000');
           
           // Fetch all store products to find related ones
-          const allProdRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+          const allProdRes = await fetch(`http://192.168.1.7:5000/api/products/store/${store._id}`);
           if (allProdRes.ok) {
             const prodData = await allProdRes.json();
             const allProducts = prodData.products || [];
@@ -117,11 +119,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
       selectedVariants,
     });
 
-    setAddedMessage(text.addedToCart);
-    setTimeout(() => {
-      setAddedMessage(null);
-      // Optional: router.back() or redirect to cart
-    }, 2000);
+    setDrawerOpen(true);
   };
 
   if (loading) {
@@ -153,11 +151,52 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
         </div>
       )}
 
-      <div className="md:max-w-7xl md:mx-auto md:w-full md:grid md:grid-cols-2 md:gap-12 md:px-5 md:py-12">
-        {/* Product Image */}
-        <div className="w-full aspect-square bg-gray-50 dark:bg-gray-900 relative md:rounded-3xl overflow-hidden shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+      <div className="md:max-w-6xl md:mx-auto md:w-full md:grid md:grid-cols-2 md:gap-12 md:px-5 md:py-12">
+        {/* Product Image Carousel */}
+        <div className="w-full flex flex-col gap-4 shrink-0">
+          <div className="w-full aspect-square bg-[#F8F9FA] dark:bg-[#161616] relative md:rounded-2xl overflow-hidden group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={[product.imageUrl, ...(product.images || [])].filter(Boolean)[currentImageIndex]} 
+              alt={product.title} 
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            />
+            
+            {[product.imageUrl, ...(product.images || [])].filter(Boolean).length > 1 && (
+              <>
+                <button 
+                  onClick={() => setCurrentImageIndex(prev => prev === 0 ? [product.imageUrl, ...(product.images || [])].filter(Boolean).length - 1 : prev - 1)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 transition-all hover:scale-105 shadow-sm text-gray-900 dark:text-white"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button 
+                  onClick={() => setCurrentImageIndex(prev => prev === [product.imageUrl, ...(product.images || [])].filter(Boolean).length - 1 ? 0 : prev + 1)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-black/80 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 transition-all hover:scale-105 shadow-sm text-gray-900 dark:text-white"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+          </div>
+          
+          {/* Thumbnails */}
+          {[product.imageUrl, ...(product.images || [])].filter(Boolean).length > 1 && (
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-4 md:px-0">
+              {[product.imageUrl, ...(product.images || [])].filter(Boolean).map((img: string, idx: number) => (
+                <button 
+                  key={idx} 
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                    currentImageIndex === idx ? 'border-gray-900 dark:border-white opacity-100' : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -225,17 +264,17 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
           </div>
         </div>
 
-        {/* Desktop Add to Cart */}
         <div className="hidden md:block mt-8">
           <button
             onClick={handleAddToCart}
-            className={`w-full py-4 text-lg font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`w-full py-4 text-lg font-bold text-white transition-all flex items-center justify-center gap-2 ${
               themeStyle === 'neo-brutalism'
-                ? 'bg-white text-black dark:bg-black dark:text-white border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest'
+                ? 'border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest'
                 : themeStyle === 'minimalist'
-                ? 'bg-black text-white dark:bg-white dark:text-black rounded-sm tracking-widest uppercase hover:bg-gray-800 dark:hover:bg-gray-200'
-                : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                ? 'rounded-sm tracking-widest uppercase hover:opacity-90'
+                : 'rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98]'
             }`}
+            style={{ backgroundColor: primaryColor || '#000' }}
           >
             {text.addToCart} - ${(product.price * quantity).toFixed(2)}
           </button>
@@ -262,16 +301,17 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
       )}
 
       {/* Sticky Bottom Add to Cart (Mobile Only) */}
-      <div className={`md:hidden sticky bottom-0 left-0 w-full bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md p-4 pb-safe z-40 border-t ${themeStyle === 'neo-brutalism' ? 'border-t-[3px] border-black dark:border-white' : 'border-gray-100 dark:border-gray-800'} shadow-[0_-10px_40px_rgba(0,0,0,0.05)]`}>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-[#111111] border-t border-gray-100 dark:border-gray-800 md:hidden z-[100] pb-safe">
         <button
           onClick={handleAddToCart}
-          className={`w-full py-4 text-lg font-bold transition-all flex items-center justify-center gap-2 ${
-              themeStyle === 'neo-brutalism'
-                ? 'bg-white text-black dark:bg-black dark:text-white border-[3px] border-black dark:border-white rounded-none uppercase tracking-widest'
-                : themeStyle === 'minimalist'
-                ? 'bg-black text-white dark:bg-white dark:text-black rounded-sm tracking-widest uppercase'
-                : 'bg-black dark:bg-white text-white dark:text-black rounded-2xl shadow-xl'
-            }`}
+          className={`w-full py-4 text-lg font-bold text-white transition-all ${
+            themeStyle === 'neo-brutalism'
+              ? 'border-[3px] border-black dark:border-white rounded-none uppercase tracking-widest'
+              : themeStyle === 'minimalist'
+              ? 'rounded-sm tracking-widest uppercase hover:opacity-90'
+              : 'rounded-2xl shadow-xl hover:opacity-95'
+          }`}
+          style={{ backgroundColor: primaryColor || '#000' }}
         >
           {text.addToCart} - ${(product.price * quantity).toFixed(2)}
         </button>

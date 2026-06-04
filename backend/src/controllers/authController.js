@@ -17,6 +17,8 @@ const authUser = async (req, res) => {
         email: user.email,
         role: user.role,
         profilePic: user.profilePic,
+        phone: user.phone,
+        address: user.address,
         token: generateToken(user._id),
       });
     } else {
@@ -57,6 +59,8 @@ const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
         profilePic: user.profilePic,
+        phone: user.phone,
+        address: user.address,
         token: generateToken(user._id),
       });
     } else {

@@ -17,11 +17,13 @@ export default function middleware(req: NextRequest) {
   const hostname = req.headers.get('host') || '';
   const isLocalhost = hostname.includes('localhost');
   const hostParts = hostname.replace(/:\d+$/, '').split('.');
-  
+
   let subdomain = null;
+  const isIpAddress = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname.replace(/:\d+$/, ''));
+
   if (isLocalhost && hostParts.length > 1) {
     subdomain = hostParts[0];
-  } else if (!isLocalhost && hostParts.length > 2) {
+  } else if (!isLocalhost && !isIpAddress && hostParts.length > 2) {
     subdomain = hostParts[0];
   }
 
@@ -32,17 +34,17 @@ export default function middleware(req: NextRequest) {
       // next-intl might have rewritten the request internally, check x-middleware-rewrite
       const rewriteUrlStr = response.headers.get('x-middleware-rewrite');
       const url = rewriteUrlStr ? new URL(rewriteUrlStr) : req.nextUrl.clone();
-      
+
       const pathParts = url.pathname.split('/'); // e.g. ['', 'en'] or ['', 'en', 'about']
       const locale = pathParts[1];
-      
+
       if (locales.includes(locale as any)) {
         // Prevent infinite rewriting if it's already rewritten
         if (pathParts[2] !== 'store') {
           // Build new path: /en/store/steavnews/about
           const remainingPath = pathParts.slice(2).join('/');
           url.pathname = `/${locale}/store/${subdomain}${remainingPath ? `/${remainingPath}` : ''}`;
-          
+
           const rewriteResponse = NextResponse.rewrite(url);
           // Preserve headers from next-intl (like x-next-intl-locale)
           response.headers.forEach((value, key) => {

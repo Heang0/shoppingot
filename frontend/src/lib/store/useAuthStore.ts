@@ -7,6 +7,8 @@ interface User {
   email: string;
   role: 'superadmin' | 'store_admin' | 'customer';
   profilePic?: string;
+  phone?: string;
+  address?: string;
   token: string;
 }
 

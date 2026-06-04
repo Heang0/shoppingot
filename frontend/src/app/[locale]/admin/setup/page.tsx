@@ -20,7 +20,7 @@ export default function StoreSetup() {
 
   useEffect(() => {
     if (user?.token) {
-      fetch('http://localhost:5000/api/stores', {
+      fetch('http://192.168.1.7:5000/api/stores', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       .then(res => res.json())
@@ -50,7 +50,7 @@ export default function StoreSetup() {
 
       if (existingStoreId) {
         // Update existing store
-        const res = await fetch(`http://localhost:5000/api/stores/${existingStoreId}`, {
+        const res = await fetch(`http://192.168.1.7:5000/api/stores/${existingStoreId}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ export default function StoreSetup() {
         if (!res.ok) throw new Error((await res.json()).message);
       } else {
         // Create new store
-        const res = await fetch('http://localhost:5000/api/stores', {
+        const res = await fetch('http://192.168.1.7:5000/api/stores', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export default function StoreSetup() {
 
       // Update Bakong Settings
       if (bakongId && storeId) {
-        await fetch(`http://localhost:5000/api/stores/${storeId}/payment-settings`, {
+        await fetch(`http://192.168.1.7:5000/api/stores/${storeId}/payment-settings`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',

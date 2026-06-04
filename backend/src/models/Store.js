@@ -57,6 +57,10 @@ const storeSchema = new mongoose.Schema(
       phone: { type: String },
       address: { type: String },
     },
+    deliverySettings: {
+      freeDeliveryThreshold: { type: Number, default: 0 },
+      isFreeDeliveryEnabled: { type: Boolean, default: false },
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -38,6 +38,43 @@ export const generateKHQR = async (bakongId, amount, currency, orderId, merchant
   }
 };
 
+export const generateBakongDeepLink = async (qrString) => {
+  const token = process.env.BAKONG_TOKEN;
+  if (!token) {
+    console.warn('BAKONG_TOKEN missing, cannot generate deep link');
+    return null;
+  }
+
+  try {
+    const res = await fetch('https://api-bakong.nbc.gov.kh/v1/generate_deeplink_by_qr', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        qr: qrString,
+        sourceInfo: {
+          appIconUrl: 'https://shoppingot.com/logo.png', // Fallback URL
+          appName: 'ShoppingOT',
+          appDeepLinkCallback: 'https://shoppingot.com/callback' // Fallback URL
+        }
+      })
+    });
+
+    const data = await res.json();
+    if (data.responseCode === 0 && data.data && data.data.shortLink) {
+      return data.data.shortLink;
+    }
+    
+    console.error('[BAKONG] Deep Link API Error:', data);
+    return null;
+  } catch (err) {
+    console.error('[BAKONG] Deep Link Fetch Error:', err);
+    return null;
+  }
+};
+
 export const verifyKHQRTransaction = async (md5Hash) => {
   const isMock = process.env.BAKONG_MOCK === 'true';
 

@@ -36,6 +36,9 @@ const productSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
     },
+    images: [{
+      type: String,
+    }],
     stock: {
       type: Number,
       default: 0,
@@ -53,6 +56,10 @@ const productSchema = new mongoose.Schema(
         options: [{ type: String }] // e.g. ["S", "M", "L"]
       }
     ],
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

@@ -1,5 +1,6 @@
 import StoreBottomNav from '@/components/store/StoreBottomNav';
 import StoreTopNav from '@/components/store/StoreTopNav';
+import CartDrawer from '@/components/store/CartDrawer';
 
 async function getStore(slug: string) {
   const res = await fetch(`http://localhost:5000/api/stores/${slug}`, { next: { revalidate: 60 } });
@@ -42,6 +43,9 @@ export default async function StorefrontLayout({
 
       {/* Bottom Navigation (Mobile Only) */}
       <StoreBottomNav locale={locale} primaryColor={primaryColor} slug={slug} initialThemeStyle={store.branding?.themeStyle || 'default'} />
+
+      {/* Cart Drawer */}
+      <CartDrawer primaryColor={primaryColor} themeStyle={store.branding?.themeStyle || 'default'} />
     </div>
   );
 }

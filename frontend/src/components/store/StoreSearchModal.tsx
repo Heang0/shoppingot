@@ -23,10 +23,10 @@ export default function StoreSearchModal({ isOpen, onClose, slug, locale, primar
       const fetchProducts = async () => {
         setLoading(true);
         try {
-          const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
+          const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${slug}`);
           if (!storeRes.ok) return;
           const store = await storeRes.json();
-          const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+          const prodRes = await fetch(`http://192.168.1.7:5000/api/products/store/${store._id}`);
           if (!prodRes.ok) return;
           const prods = await prodRes.json();
           setProducts(prods.products || []);

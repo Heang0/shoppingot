@@ -28,7 +28,7 @@ export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
   useEffect(() => {
     const fetchStoreLogo = () => {
       if (user?.token && user?.role === 'store_admin') {
-        fetch('http://localhost:5000/api/stores', {
+        fetch('http://192.168.1.7:5000/api/stores', {
           headers: { Authorization: `Bearer ${user.token}` }
         })
         .then(res => res.json())

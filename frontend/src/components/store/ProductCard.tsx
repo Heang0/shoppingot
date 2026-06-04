@@ -1,7 +1,8 @@
 'use client';
 
 import { useCartStore } from '@/lib/store/useCartStore';
-import { Plus } from 'lucide-react';
+import { useFavoritesStore } from '@/lib/store/useFavoritesStore';
+import { ShoppingCart, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
@@ -9,16 +10,22 @@ export default function ProductCard({
   product, 
   primaryColor, 
   themeStyle = 'default', 
-  onAddToCart 
+  onAddToCart,
+  isBestSeller = false
 }: {
   product: any;
   primaryColor: string;
   themeStyle?: string;
   onAddToCart: (product: any) => void;
+  isBestSeller?: boolean;
 }) {
   const params = useParams();
   const router = useRouter();
   const addItem = useCartStore(state => state.addItem);
+  const setDrawerOpen = useCartStore(state => state.setDrawerOpen);
+  const addFavorite = useFavoritesStore(state => state.addFavorite);
+  const removeFavorite = useFavoritesStore(state => state.removeFavorite);
+  const isFavorite = useFavoritesStore(state => state.isFavorite(product._id));
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,54 +44,109 @@ export default function ProductCard({
       quantity: 1,
       imageUrl: product.imageUrl,
     });
+    setDrawerOpen(true);
     onAddToCart(product);
   };
 
-  let cardBaseClass = "flex flex-col group h-full transition-all ";
-  let imageContainerClass = "aspect-square w-full relative shrink-0 overflow-hidden mb-3 ";
-  let priceClass = "text-[13px] font-semibold text-gray-900 dark:text-white";
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isFavorite) {
+      removeFavorite(product._id);
+    } else {
+      addFavorite(product._id);
+    }
+  };
+
+  let cardBaseClass = "flex flex-col group h-full transition-all relative";
+  let imageContainerClass = "aspect-square w-full relative shrink-0 ";
+  let priceClass = "text-sm font-bold text-gray-900 dark:text-white";
 
   if (themeStyle === 'minimalist') {
-    cardBaseClass += "p-2 border border-gray-100 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-600 rounded-sm bg-white dark:bg-black";
-    imageContainerClass += "bg-gray-50 dark:bg-gray-900";
-    priceClass = "text-[13px] font-light text-gray-900 dark:text-white";
+    cardBaseClass += " p-0 bg-transparent";
+    imageContainerClass += "bg-gray-50 dark:bg-[#1a1a1a] overflow-hidden rounded-sm mb-4";
+    priceClass = "text-sm font-medium text-gray-900 dark:text-white tracking-wide";
   } else if (themeStyle === 'neo-brutalism') {
-    cardBaseClass += "p-3 border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-black";
-    imageContainerClass += "border-2 border-black dark:border-white bg-[#f0f0f0] dark:bg-[#222]";
-    priceClass = "text-[14px] font-black text-black dark:text-white bg-green-200 dark:bg-green-800 px-1 border-2 border-black dark:border-white";
+    cardBaseClass += " p-3 border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-black";
+    imageContainerClass += "border-2 border-black dark:border-white bg-[#f0f0f0] dark:bg-[#222] overflow-hidden mb-4";
+    priceClass = "text-[15px] font-black text-black dark:text-white bg-green-200 dark:bg-green-800 px-1 border-2 border-black dark:border-white";
   } else {
-    // Default
-    cardBaseClass += "rounded-xl";
-    imageContainerClass += "bg-gray-50 dark:bg-gray-900 rounded-lg";
+    // Premium Default
+    cardBaseClass += " p-3 sm:p-4 rounded-3xl bg-white dark:bg-[#161616] transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.4)] hover:-translate-y-1";
+    imageContainerClass += "bg-[#F8F9FA] dark:bg-[#222222] rounded-2xl mb-4 overflow-hidden";
   }
 
   return (
     <Link href={`/${params.locale}/product/${product.slug || product._id}`} className={cardBaseClass}>
       <div className={imageContainerClass}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={product.imageUrl?.replace('/upload/', '/upload/w_600,c_limit,q_auto/')} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-        {/* Quick add button overlay */}
-        <button
-          onClick={handleAdd}
-          className={`absolute bottom-2 right-2 w-8 h-8 flex items-center justify-center text-white shadow-lg opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200 active:scale-90 md:flex hidden ${themeStyle === 'neo-brutalism' ? 'rounded-none border-2 border-black' : 'rounded-full'}`}
-          style={{ backgroundColor: primaryColor || '#000' }}
-        >
-          <Plus size={16} strokeWidth={2.5} className={themeStyle === 'neo-brutalism' ? 'text-black' : ''} />
-        </button>
+        <img 
+          src={product.imageUrl?.replace('/upload/', '/upload/w_600,c_limit,q_auto/')} 
+          alt={product.title} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl" 
+        />
+        
+        {/* Badge - rendered after image so it appears on top */}
+        {isBestSeller && (
+          <div className="absolute top-2 left-2 z-50">
+            <span 
+              className="inline-block text-white text-[10px] font-bold px-2.5 py-1 rounded-sm uppercase tracking-wider whitespace-nowrap shadow-sm"
+              style={{ backgroundColor: primaryColor || '#000' }}
+            >
+              Best Seller
+            </span>
+          </div>
+        )}
       </div>
-      <div className="flex flex-col flex-1 px-1">
-        <h3 className="text-[13px] font-medium text-gray-900 dark:text-white line-clamp-1">{params.locale === 'km' && product.titleKm ? product.titleKm : product.title}</h3>
-        <p className="mt-0.5 text-gray-400 dark:text-gray-500 text-[11px] line-clamp-1">{params.locale === 'km' && product.descriptionKm ? product.descriptionKm : product.description}</p>
-        <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className={priceClass}>${product.price.toFixed(2)}</span>
-          {/* Mobile add button (always visible) */}
-          <button
-            onClick={handleAdd}
-            className={`md:hidden w-7 h-7 flex items-center justify-center text-white active:scale-90 shadow-sm ${themeStyle === 'neo-brutalism' ? 'rounded-none border-[1.5px] border-black' : 'rounded-full'}`}
-            style={{ backgroundColor: primaryColor || '#000' }}
-          >
-            <Plus size={14} strokeWidth={2.5} />
-          </button>
+
+      <div className="flex flex-col flex-1">
+        <h3 className={`line-clamp-1 ${themeStyle === 'minimalist' ? 'text-sm font-medium text-gray-900 dark:text-white mb-0.5' : themeStyle === 'neo-brutalism' ? 'text-base font-black uppercase text-black dark:text-white mb-1' : 'text-[15px] font-semibold text-gray-900 dark:text-white mb-1 tracking-tight'}`}>
+          {params.locale === 'km' && product.titleKm ? product.titleKm : product.title}
+        </h3>
+        <p className={`line-clamp-2 ${themeStyle === 'minimalist' ? 'text-xs text-gray-500' : 'text-xs text-gray-500 dark:text-gray-400'}`}>
+          {params.locale === 'km' && product.descriptionKm ? product.descriptionKm : product.description}
+        </p>
+        
+        <div className={`mt-auto pt-4 flex items-end justify-between`}>
+          <span className={priceClass} style={{ color: themeStyle === 'default' ? (primaryColor || '#000') : undefined }}>
+            ${product.price.toFixed(2)}
+          </span>
+          
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleAdd}
+              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 text-xs font-bold transition-all active:scale-95 ${
+                themeStyle === 'neo-brutalism' 
+                  ? 'border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none rounded-none text-white bg-black' 
+                  : themeStyle === 'minimalist' 
+                    ? 'rounded-sm text-white hover:opacity-90' 
+                    : 'rounded-full text-white shadow-md hover:shadow-lg hover:-translate-y-0.5'
+              }`}
+              style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+              title="Add to cart"
+            >
+              <ShoppingCart size={16} strokeWidth={2.5} className="text-white" />
+            </button>
+            <button
+              onClick={handleWishlist}
+              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 text-xs font-medium transition-all active:scale-95 ${
+                themeStyle === 'neo-brutalism'
+                  ? 'border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none rounded-none text-white bg-black'
+                  : themeStyle === 'minimalist'
+                    ? 'rounded-sm text-white hover:opacity-90'
+                    : 'rounded-full text-white shadow-md hover:shadow-lg hover:-translate-y-0.5'
+              }`}
+              style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+              title="Add to wishlist"
+            >
+              <Heart 
+                size={16} 
+                strokeWidth={2.5}
+                className={`transition-all ${isFavorite ? 'fill-white text-white scale-110' : 'fill-transparent text-white hover:scale-110'}`}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </Link>

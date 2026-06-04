@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Home, ShoppingCart, User, Search } from 'lucide-react';
-import { useCartStore } from '@/lib/store/useCartStore';
+import { Home, User, Search, ShoppingBag, Tag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import StoreSearchModal from './StoreSearchModal';
 
@@ -15,7 +14,6 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const items = useCartStore(state => state.items);
   const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [themeStyle, setThemeStyle] = useState(initialThemeStyle || 'default');
@@ -24,7 +22,7 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
     setMounted(true);
     const fetchTheme = async () => {
       try {
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
+        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${slug}`);
         if (storeRes.ok) {
           const store = await storeRes.json();
           const previewTheme = searchParams.get('theme');
@@ -51,9 +49,9 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
   };
 
   const homeHref = appendParams(`/${locale}`);
-  const cartHref = appendParams(`/${locale}/cart`);
+  const productsHref = appendParams(`/${locale}/products`);
+  const promotionsHref = appendParams(`/${locale}/promotions`);
   const profileHref = appendParams(`/${locale}/profile`);
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const t = (en: string, km: string) => locale === 'km' ? km : en;
 
@@ -65,17 +63,22 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
       isActive: pathname === `/${locale}` || pathname === `/${locale}/` || pathname === '/',
     },
     {
+      label: t('Products', 'ផលិតផល'),
+      href: productsHref,
+      icon: ShoppingBag,
+      isActive: pathname?.endsWith('/products') || pathname?.endsWith('/products/'),
+    },
+    {
       label: t('Search', 'ស្វែងរក'),
       onClick: () => setIsSearchOpen(true),
       icon: Search,
       isActive: isSearchOpen,
     },
     {
-      label: t('Cart', 'កន្ត្រក'),
-      href: cartHref,
-      icon: ShoppingCart,
-      isActive: pathname?.includes('/cart'),
-      badge: totalItems,
+      label: t('Promotions', 'ប្រូម៉ូសិន'),
+      href: promotionsHref,
+      icon: Tag,
+      isActive: pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/'),
     },
     {
       label: t('Account', 'គណនី'),
@@ -101,7 +104,7 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
           {navItems.map((item) => {
             let itemClass = "flex flex-1 flex-col items-center justify-center gap-0.5 relative h-full transition-all ";
             let activeStyle: any = { color: item.isActive ? primaryColor : '#9CA3AF' };
-            
+
             if (themeStyle === 'neo-brutalism' && item.isActive) {
               itemClass += " border-2 border-black dark:border-white bg-[#f0f0f0] dark:bg-gray-800 my-1 mx-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] translate-y-[-2px] ";
               activeStyle = { color: 'black' }; // Neo-brutalism usually prefers harsh contrast over primary color for nav items, but we can keep it black/white
@@ -114,7 +117,17 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
                 className={itemClass}
                 style={activeStyle}
               >
-                <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} className={themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white' : ''} />
+                <div className="relative">
+                  <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} className={themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white' : ''} />
+                  {mounted && (item.badge ?? 0) > 0 && (
+                    <span
+                      className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 text-[9px] font-bold text-white flex items-center justify-center shadow-sm ${themeStyle === 'neo-brutalism' ? 'rounded-none border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-black' : 'rounded-full'}`}
+                      style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
                 <span className={`text-[10px] font-medium ${themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white font-bold uppercase' : ''}`}>{item.label}</span>
               </button>
             ) : (
@@ -127,7 +140,10 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
                 <div className="relative">
                   <item.icon size={22} strokeWidth={item.isActive ? 2.5 : 1.8} className={themeStyle === 'neo-brutalism' && item.isActive ? 'text-black dark:text-white' : ''} />
                   {mounted && (item.badge ?? 0) > 0 && (
-                    <span className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-500 flex items-center justify-center ${themeStyle === 'neo-brutalism' ? 'rounded-none border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]' : 'rounded-full'}`}>
+                    <span
+                      className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 text-[9px] font-bold text-white flex items-center justify-center shadow-sm ${themeStyle === 'neo-brutalism' ? 'rounded-none border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-black' : 'rounded-full'}`}
+                      style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+                    >
                       {item.badge}
                     </span>
                   )}

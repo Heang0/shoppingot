@@ -21,6 +21,8 @@ interface CartState {
   getTotalPrice: () => number;
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
+  isDrawerOpen: boolean;
+  setDrawerOpen: (isOpen: boolean) => void;
 }
 
 // Helper to generate a unique ID for a cart item based on its variants
@@ -39,6 +41,8 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       _hasHydrated: false,
+      isDrawerOpen: false,
+      setDrawerOpen: (isOpen) => set({ isDrawerOpen: isOpen }),
       setHasHydrated: (state) => set({ _hasHydrated: state }),
       addItem: (item) => {
         const items = get().items;

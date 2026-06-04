@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     try {
       // Assuming backend runs on 5000 for now
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch('http://192.168.1.7:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

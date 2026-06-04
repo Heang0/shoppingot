@@ -9,9 +9,18 @@ const kantumruy = Kantumruy_Pro({
   variable: '--font-kantumruy'
 });
 
+import { Viewport } from 'next';
+
 export const metadata = {
   title: 'ShoppingOT',
   description: 'Multi-vendor SaaS e-commerce platform',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
  
 export default async function LocaleLayout({

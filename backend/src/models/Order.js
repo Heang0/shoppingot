@@ -37,6 +37,13 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    promoCode: {
+      type: String,
+    },
+    discountApplied: {
+      type: Number,
+      default: 0,
+    },
     items: [
       {
         productId: {
@@ -59,6 +66,9 @@ const orderSchema = new mongoose.Schema(
     bakongMd5: {
       type: String,
     },
+    qrString: {
+      type: String,
+    },
     orderSource: {
       type: String,
       enum: ['ONLINE', 'POS'],
@@ -66,7 +76,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['KHQR', 'CASH'],
+      enum: ['KHQR', 'CASH', 'bakong_app'],
       default: 'KHQR',
     },
     cashReceived: {
@@ -101,5 +111,6 @@ const Order = mongoose.model('Order', orderSchema);
 // Create indexes
 orderSchema.index({ storeId: 1, paymentStatus: 1, createdAt: -1 });
 orderSchema.index({ customerId: 1 });
+orderSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60, partialFilterExpression: { paymentStatus: 'PENDING' } });
 
 export default Order;

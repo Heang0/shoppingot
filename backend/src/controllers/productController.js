@@ -70,7 +70,7 @@ const getProductByIdOrSlug = async (req, res) => {
 // @route   POST /api/products
 // @access  Private (Store Admin)
 const createProduct = async (req, res) => {
-  const { storeId, title, titleKm, description, descriptionKm, price, imageUrl, stock, variants, categoryId } = req.body;
+  const { storeId, title, titleKm, description, descriptionKm, price, imageUrl, images, stock, variants, categoryId } = req.body;
 
   try {
     const store = await Store.findById(storeId).populate('plan.planId');
@@ -101,6 +101,7 @@ const createProduct = async (req, res) => {
       descriptionKm,
       price,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=500&q=80', // Default mock image
+      images: images || [],
       stock: stock || 0,
       barcode: req.body.barcode,
       sku: req.body.sku,

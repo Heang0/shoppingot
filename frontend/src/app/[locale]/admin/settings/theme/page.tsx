@@ -38,7 +38,7 @@ export default function ThemeCustomizer() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/stores', {
+        const res = await fetch('http://192.168.1.7:5000/api/stores', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         const stores = await res.json();
@@ -62,7 +62,7 @@ export default function ThemeCustomizer() {
     if (!storeId) return;
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/stores/${storeId}`, {
+      const res = await fetch(`http://192.168.1.7:5000/api/stores/${storeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,19 +116,36 @@ export default function ThemeCustomizer() {
           <div className="bg-white dark:bg-[#111111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('color_title')}</h3>
             <p className="text-sm text-gray-500 mb-4">{t('color_desc')}</p>
-            <div className="flex items-center gap-4">
-              <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-16 h-16 rounded cursor-pointer border-0 p-0"
-              />
-              <input
-                type="text"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white"
-              />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-3 mb-2">
+                {['#000000', '#111111', '#E84C3D', '#E67E22', '#2ECC71', '#3498DB', '#9B59B6', '#E91E63'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setPrimaryColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      primaryColor.toUpperCase() === color 
+                        ? 'border-gray-900 dark:border-white scale-110 shadow-md' 
+                        : 'border-transparent hover:scale-105 shadow-sm'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="w-16 h-16 rounded-xl cursor-pointer border-2 border-gray-100 dark:border-gray-800 p-0 bg-transparent overflow-hidden"
+                />
+                <input
+                  type="text"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-gray-200"
+                />
+              </div>
             </div>
           </div>
 

@@ -22,7 +22,7 @@ function AddToCartToast({ message, visible }: { message: string; visible: boolea
 }
 
 // --- Shared Storefront View ---
-export default function StorefrontView({ params, categorySlug }: { params: { locale: string; slug: string }, categorySlug?: string }) {
+export default function StorefrontView({ params, categorySlug, viewMode = 'home' }: { params: { locale: string; slug: string }, categorySlug?: string, viewMode?: 'home' | 'catalog' | 'promotions' | 'categories' }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const previewTheme = searchParams.get('theme');
@@ -38,6 +38,7 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const allLabel = params.locale === 'km' ? 'ទាំងអស់' : 'All';
+  const isKm = params.locale === 'km';
 
   useEffect(() => {
     setActiveCategorySlug(categorySlug || 'All');
@@ -46,7 +47,7 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
@@ -54,11 +55,11 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
         setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
         setBannerUrl(store.branding?.bannerUrl || null);
 
-        const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+        const prodRes = await fetch(`http://192.168.1.7:5000/api/products/store/${store._id}`);
         const prods = await prodRes.json();
         setProducts(prods.products || []);
 
-        const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
+        const catRes = await fetch(`http://192.168.1.7:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
           const cats = await catRes.json();
           setCategories(cats);
@@ -78,6 +79,9 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
   }, []);
 
   const filteredProducts = products.filter(p => {
+    // If we're on the promotions page, we only show best sellers
+    if (viewMode === 'promotions' && !p.isBestSeller) return false;
+
     if (activeCategorySlug === 'All') return true;
     const cat = categories.find(c => c.slug === activeCategorySlug);
     if (!cat) return false;
@@ -85,13 +89,16 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
     return String(pCat) === String(cat._id);
   });
 
+  const bestSellers = products.filter(p => p.isBestSeller);
+  const newArrivals = [...products].reverse().slice(0, 8);
+
   let bannerContainerClass = "w-full bg-gray-100 dark:bg-gray-900 flex ";
   if (themeStyle === 'minimalist') {
-    bannerContainerClass += "md:mx-auto md:max-w-7xl md:rounded-sm overflow-hidden";
+    bannerContainerClass += "md:mx-auto md:max-w-7xl md:rounded-sm overflow-hidden mb-6 md:mb-10";
   } else if (themeStyle === 'neo-brutalism') {
-    bannerContainerClass += "md:mx-auto md:max-w-7xl md:rounded-none md:border-[3px] md:border-black md:dark:border-white md:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] overflow-hidden";
+    bannerContainerClass += "md:mx-auto md:max-w-7xl md:rounded-none md:border-[3px] md:border-black md:dark:border-white md:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] overflow-hidden mb-6 md:mb-10";
   } else {
-    bannerContainerClass += "md:mx-auto md:max-w-7xl md:px-4 md:rounded-2xl overflow-hidden";
+    bannerContainerClass += "md:mx-auto md:max-w-7xl md:px-4 md:py-4 md:rounded-3xl overflow-hidden mb-6 md:mb-10";
   }
 
   const getCategoryClass = (isActive: boolean) => {
@@ -122,69 +129,225 @@ export default function StorefrontView({ params, categorySlug }: { params: { loc
         </div>
       ) : null}
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-8 sm:py-12 space-y-10 sm:space-y-14">
         {!bannerUrl && (
           <div className="pt-2">
-            <h2 className="text-4xl sm:text-5xl font-medium text-gray-900 dark:text-white tracking-tight mb-1">Discover</h2>
-            <p className="text-gray-400 dark:text-gray-500 text-sm">The latest collection.</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">{isKm ? 'ស្វែងយល់' : 'Discover'}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-medium">{isKm ? 'កម្រងផលិតផលថ្មីៗបំផុត។' : 'The latest collection.'}</p>
           </div>
         )}
 
-        {categories.length > 0 && (
-          <div className={`flex gap-5 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 ${themeStyle === 'neo-brutalism' ? 'pt-2' : ''}`}>
-            <Link
-              href={getAppendParams(`/${params.locale}`)}
-              className={getCategoryClass(activeCategorySlug === 'All')}
-            >
-              {allLabel} ({products.length})
-            </Link>
-            {categories
-              .filter(cat => products.some(p => {
-                const pCat = p.category?._id ?? p.category;
-                return String(pCat) === String(cat._id);
-              }))
-              .map(cat => {
+        {/* CATEGORIES VIEW */}
+        {viewMode === 'categories' && (
+          <div className="pt-2 pb-10">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-8">
+              {isKm ? 'ប្រភេទទាំងអស់' : 'All Categories'}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {categories.map(cat => {
                 const count = products.filter(p => {
                   const pCat = p.category?._id ?? p.category;
                   return String(pCat) === String(cat._id);
                 }).length;
                 return (
-                  <Link
+                  <Link 
                     key={cat._id}
                     href={getAppendParams(`/${params.locale}/category/${cat.slug}`)}
-                    className={getCategoryClass(activeCategorySlug === cat.slug)}
+                    className={`flex flex-col bg-white dark:bg-[#111111] border rounded-2xl p-6 transition-all duration-300 group ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-100 dark:border-gray-800 hover:shadow-xl hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-1'}`}
                   >
-                    {params.locale === 'km' && cat.nameKm ? cat.nameKm : cat.name} ({count})
+                    <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white group-hover:opacity-80 transition-opacity">
+                      {isKm && cat.nameKm ? cat.nameKm : cat.name}
+                    </span>
+                    <div className="mt-4 flex items-center justify-end">
+                      <span className="text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors transform group-hover:translate-x-1 duration-300">&rarr;</span>
+                    </div>
                   </Link>
                 );
-              })
-            }
+              })}
+            </div>
           </div>
         )}
 
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 mb-3" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded mb-2" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
+        {/* CATALOG & PROMOTIONS VIEW */}
+        {(viewMode === 'catalog' || viewMode === 'promotions' || categorySlug) && (
+          <>
+            {viewMode === 'promotions' && (
+              <div className="pt-2 mb-4">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{isKm ? 'ប្រូម៉ូសិន' : 'Promotions'}</h2>
+                <p className="text-gray-500 mt-1">{isKm ? 'ផលិតផលលក់ដាច់បំផុតនិងប្រូម៉ូសិន' : 'Best sellers and special offers'}</p>
               </div>
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">No products found.</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8">
-            {filteredProducts.map(product => (
-              <ProductCard 
-                key={product._id} 
-                product={product} 
-                primaryColor={primaryColor} 
-                themeStyle={themeStyle}
-                onAddToCart={showToast} 
-              />
-            ))}
+            )}
+            {categories.length > 0 && viewMode !== 'promotions' && (
+              <div className={`flex gap-5 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 ${themeStyle === 'neo-brutalism' ? 'pt-2' : ''}`}>
+                <Link
+                  href={getAppendParams(viewMode === 'promotions' ? `/${params.locale}/promotions` : `/${params.locale}/products`)}
+                  className={getCategoryClass(activeCategorySlug === 'All')}
+                >
+                  {allLabel} ({viewMode === 'promotions' ? bestSellers.length : products.length})
+                </Link>
+                {categories
+                  .filter(cat => products.some(p => {
+                    if (viewMode === 'promotions' && !p.isBestSeller) return false;
+                    const pCat = p.category?._id ?? p.category;
+                    return String(pCat) === String(cat._id);
+                  }))
+                  .map(cat => {
+                    const count = products.filter(p => {
+                      if (viewMode === 'promotions' && !p.isBestSeller) return false;
+                      const pCat = p.category?._id ?? p.category;
+                      return String(pCat) === String(cat._id);
+                    }).length;
+
+                    const catHref = getAppendParams(
+                      viewMode === 'promotions' 
+                        ? `/${params.locale}/promotions/category/${cat.slug}`
+                        : `/${params.locale}/category/${cat.slug}`
+                    );
+
+                    return (
+                      <Link
+                        key={cat._id}
+                        href={catHref}
+                        className={getCategoryClass(activeCategorySlug === cat.slug)}
+                      >
+                        {params.locale === 'km' && cat.nameKm ? cat.nameKm : cat.name} ({count})
+                      </Link>
+                    );
+                  })
+                }
+              </div>
+            )}
+
+            {loading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
+                  <div key={i} className="animate-pulse flex flex-col">
+                    <div className="aspect-square bg-gray-100 dark:bg-[#1a1a1a] rounded-2xl mb-4 w-full" />
+                    <div className="h-4 bg-gray-100 dark:bg-[#1a1a1a] rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-100 dark:bg-[#1a1a1a] rounded w-1/2 mb-4" />
+                    <div className="mt-auto h-8 bg-gray-100 dark:bg-[#1a1a1a] rounded w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-24 bg-gray-50 dark:bg-[#111111] rounded-3xl border border-gray-100 dark:border-gray-800/50">
+                <p className="text-gray-500 dark:text-gray-400 font-medium">{isKm ? 'មិនមានផលិតផលទេ។' : 'No products found.'}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14">
+                {filteredProducts.map((product) => (
+                  <ProductCard 
+                    key={product._id} 
+                    product={product} 
+                    primaryColor={primaryColor} 
+                    themeStyle={themeStyle}
+                    onAddToCart={showToast}
+                    isBestSeller={product.isBestSeller}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* HOME VIEW */}
+        {viewMode === 'home' && !categorySlug && (
+          <div className="flex flex-col gap-16 md:gap-24">
+            
+            {/* Best Sellers Section */}
+            {bestSellers.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{isKm ? 'លក់ដាច់បំផុត' : 'Best Sellers'}</h3>
+                </div>
+                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {bestSellers.map(product => (
+                    <div key={product._id} className="w-[160px] sm:w-[220px] md:w-[260px] shrink-0">
+                      <ProductCard 
+                        product={product} 
+                        primaryColor={primaryColor} 
+                        themeStyle={themeStyle}
+                        onAddToCart={showToast}
+                        isBestSeller={product.isBestSeller}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <Link 
+                    href={getAppendParams(`/${params.locale}/promotions`)} 
+                    className={`px-8 py-3 text-sm font-semibold rounded-full transition-all duration-300 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'text-white hover:shadow-lg hover:-translate-y-0.5'}`}
+                    style={themeStyle === 'neo-brutalism' ? { backgroundColor: primaryColor || '#f0f0f0' } : { backgroundColor: primaryColor || '#000' }}
+                  >
+                    {isKm ? 'មើលទាំងអស់' : 'View All'}
+                  </Link>
+                </div>
+              </section>
+            )}
+
+            {/* Shop by Category Section */}
+            {categories.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{isKm ? 'ទិញតាមប្រភេទ' : 'Shop by Category'}</h3>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {categories.map(cat => {
+                    return (
+                      <Link 
+                        key={cat._id}
+                        href={getAppendParams(`/${params.locale}/category/${cat.slug}`)}
+                        className={`flex items-center justify-center bg-white dark:bg-[#111111] border rounded-full px-6 py-3 sm:px-8 sm:py-4 min-w-max hover:-translate-y-1 transition-all duration-300 group shrink-0 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 dark:border-gray-800 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.05)]'}`}
+                      >
+                        <span className="text-sm sm:text-base font-bold text-gray-900 dark:text-white group-hover:opacity-80 transition-opacity">
+                          {isKm && cat.nameKm ? cat.nameKm : cat.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <Link 
+                    href={getAppendParams(`/${params.locale}/categories`)} 
+                    className={`px-8 py-3 text-sm font-semibold rounded-full transition-all duration-300 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'text-white hover:shadow-lg hover:-translate-y-0.5'}`}
+                    style={themeStyle === 'neo-brutalism' ? { backgroundColor: primaryColor || '#f0f0f0' } : { backgroundColor: primaryColor || '#000' }}
+                  >
+                    {isKm ? 'មើលទាំងអស់' : 'View All'}
+                  </Link>
+                </div>
+              </section>
+            )}
+
+            {/* New Arrivals Section */}
+            {newArrivals.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{isKm ? 'ទំនិញថ្មី' : 'New Arrivals'}</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14">
+                  {newArrivals.map(product => (
+                    <ProductCard 
+                      key={product._id} 
+                      product={product} 
+                      primaryColor={primaryColor} 
+                      themeStyle={themeStyle}
+                      onAddToCart={showToast}
+                      isBestSeller={product.isBestSeller}
+                    />
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <Link 
+                    href={getAppendParams(`/${params.locale}/products`)} 
+                    className={`px-8 py-3 text-sm font-semibold rounded-full transition-all duration-300 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'text-white hover:shadow-lg hover:-translate-y-0.5'}`}
+                    style={themeStyle === 'neo-brutalism' ? { backgroundColor: primaryColor || '#f0f0f0' } : { backgroundColor: primaryColor || '#000' }}
+                  >
+                    {isKm ? 'មើលទាំងអស់' : 'Shop All'}
+                  </Link>
+                </div>
+              </section>
+            )}
+
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
-import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
@@ -10,27 +10,41 @@ import { ChevronLeft } from 'lucide-react';
 
 export default function CheckoutPage({ params }: { params: { slug: string, locale: string } }) {
   const { items, getTotalPrice, clearCart, _hasHydrated } = useCartStore();
-  const user = useAuthStore((state) => state.user);
+  const user = useCustomerAuthStore((state) => state.customerInfo);
+  const setCustomerInfo = useCustomerAuthStore((state) => state.setCustomerInfo);
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [storeId, setStoreId] = useState<string | null>(null);
   const [store, setStore] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
-  const [qrData, setQrData] = useState<{ qrString: string; md5: string; orderId: string } | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID' | 'FAILED'>('PENDING');
+  const [qrData, setQrData] = useState<{ qrString: string; md5: string; orderId: string; totalAmount: number; currency: string; deepLink?: string } | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'IDLE' | 'PENDING' | 'PAID' | 'FAILED'>('IDLE');
+  const [paymentMethod, setPaymentMethod] = useState<'KHQR' | 'bakong_app'>('KHQR');
 
   // Checkout State
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [guestAddress, setGuestAddress] = useState('');
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [tempPhone, setTempPhone] = useState('');
+  const [tempAddress, setTempAddress] = useState('');
   const [deliveryPartner, setDeliveryPartner] = useState('J&T Express');
   const [deliveryNote, setDeliveryNote] = useState('');
-  
+
+  // Promo State
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [promoError, setPromoError] = useState('');
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
   const [themeStyle, setThemeStyle] = useState('default');
+  const [primaryColor, setPrimaryColor] = useState('#000000');
   const searchParams = useSearchParams();
   const isKm = params.locale === 'km';
-  
+
   const text = {
     checkout: isKm ? 'ការទូទាត់' : 'Checkout',
     fillGuest: isKm ? 'សូមបំពេញព័ត៌មានទំនាក់ទំនងភ្ញៀវទាំងអស់ ដើម្បីបន្ត។' : 'Please fill in all guest contact details to proceed.',
@@ -46,6 +60,9 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     acceptedPaymentMethods: isKm ? 'វិធីសាស្ត្រទូទាត់ដែលទទួលយក' : 'Accepted payment methods',
     instantApproval: isKm ? 'អនុម័តភ្លាមៗ' : 'Instant Approval',
     bakongPayment: isKm ? 'ទូទាត់តាម Bakong KHQR' : 'Payment via Bakong KHQR',
+    bakongApp: isKm ? 'ទូទាត់តាមរយៈកម្មវិធីបាគង' : 'Pay via Bakong App',
+    bakongAppDesc: isKm ? 'ចុចដើម្បីបើកកម្មវិធីបាគងដោយផ្ទាល់' : 'Tap to pay directly with Bakong',
+    mobileOnly: isKm ? 'សម្រាប់តែទូរស័ព្ទដៃ' : 'Mobile Only',
     totalProduct: isKm ? 'សរុបតម្លៃទំនិញ / Total Product' : 'Total Product',
     discount: isKm ? 'បញ្ចុះតម្លៃ / Discount' : 'Discount',
     totalAfterDiscount: isKm ? 'សរុបក្រោយបញ្ចុះតម្លៃ / Total After Discount' : 'Total After Discount',
@@ -62,26 +79,29 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const deliveryOptions = [
     { id: 'J&T Express', name: isKm ? 'ក្រុមហ៊ុន J&T Express' : 'J&T Express', logo: '/logo/J&T.webp', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 1.50 },
     { id: 'VET Express', name: isKm ? 'វីរៈប៊ុនថាំអិចប្រេស - VET' : 'VET Express', logo: '/logo/VET.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 1.50 },
-    { id: 'Grab', name: isKm ? 'គ្រេប - Grab' : 'Grab', logo: '/logo/Grab.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់ក្នុងក្រុង - Delivery in City' : 'Delivery in City', fee: 2.00 },
+    { id: 'Grab', name: isKm ? 'គ្រេប - Grab' : 'Grab', logo: '/logo/Grab.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់ក្នុងក្រុង - Delivery in City' : 'Delivery in City', fee: 1.50 },
   ];
 
-  const currentDeliveryFee = useMemo(() => {
-    return deliveryOptions.find(d => d.id === deliveryPartner)?.fee || 0;
-  }, [deliveryPartner]);
-
   const totalProduct = getTotalPrice();
-  const discount = 0; // For future implementation
+
+  const currentDeliveryFee = useMemo(() => {
+    let fee = deliveryOptions.find(d => d.id === deliveryPartner)?.fee || 0;
+    if (store?.deliverySettings?.isFreeDeliveryEnabled && store?.deliverySettings?.freeDeliveryThreshold > 0) {
+      if (totalProduct >= store.deliverySettings.freeDeliveryThreshold) {
+        fee = 0;
+      }
+    }
+    return fee;
+  }, [deliveryPartner, store, totalProduct]);
+
+  const discount = discountAmount;
   const totalAfterDiscount = totalProduct - discount;
   const grandTotal = totalAfterDiscount + currentDeliveryFee;
 
   useEffect(() => {
     setMounted(true);
-    
-    // If no items and no active payment, redirect back to cart
-    if (_hasHydrated && items.length === 0 && !sessionStorage.getItem('pendingCartQR')) {
-      router.push(`/${params.locale}/cart`);
-      return;
-    }
+
+    // Removed redirect to prevent Next.js URL rewrite leak. We'll handle empty state in render.
 
     const savedQR = sessionStorage.getItem('pendingCartQR');
     if (savedQR) {
@@ -94,22 +114,64 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         } else {
           sessionStorage.removeItem('pendingCartQR');
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
-    fetch(`http://localhost:5000/api/stores/${params.slug}`)
+    fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`)
       .then(res => res.json())
       .then(data => {
         setStoreId(data._id);
         setStore(data);
         const previewTheme = searchParams.get('theme');
+        const previewColor = searchParams.get('color');
         setThemeStyle(previewTheme || data.branding?.themeStyle || 'default');
+        setPrimaryColor(previewColor || data.branding?.primaryColor || '#000000');
       })
       .catch(console.error);
   }, [params.slug, searchParams, items.length, router, params.locale]);
 
+  useEffect(() => {
+    // If the cart total changes, we should re-validate or remove the promo if it drops below minPurchase
+  }, [totalProduct]);
+
+  useEffect(() => {
+    if (user) {
+      if (!guestName) setGuestName(user.name || '');
+      if (!guestPhone) setGuestPhone(user.phone || '');
+      if (!guestAddress) setGuestAddress(user.address || '');
+    }
+  }, [user]);
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setApplyingPromo(true);
+    setPromoError('');
+    try {
+      const res = await fetch('http://192.168.1.7:5000/api/promos/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId,
+          code: promoInput,
+          orderValue: totalProduct,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setAppliedPromo(data.code);
+      setDiscountAmount(data.discountAmount);
+    } catch (err: any) {
+      setPromoError(err.message);
+      setAppliedPromo(null);
+      setDiscountAmount(0);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
   const handleCheckout = async () => {
-    if (!user && (!guestName || !guestPhone || !guestAddress)) {
+    if (!guestName || !guestPhone || !guestAddress) {
       alert(text.fillGuest);
       return;
     }
@@ -120,21 +182,52 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     try {
       const orderData = {
         storeId,
-        items: items.map(i => ({ 
-          productId: i.productId, 
-          quantity: i.quantity, 
+        items: items.map(i => ({
+          productId: i.productId,
+          quantity: i.quantity,
           price: i.price,
-          selectedVariants: i.selectedVariants 
+          selectedVariants: i.selectedVariants
         })),
         totalAmount: grandTotal,
         subtotal: totalProduct,
         deliveryPartner,
         deliveryFee: currentDeliveryFee,
         deliveryNote,
-        ...( !user && { guestInfo: { name: guestName, phone: guestPhone, address: guestAddress } } )
+        promoCode: appliedPromo,
+        guestInfo: { name: guestName, phone: guestPhone, address: guestAddress },
+        paymentMethod
       };
 
-      const endpoint = user ? 'http://localhost:5000/api/orders' : 'http://localhost:5000/api/orders/guest';
+      // Auto-save address to profile if they are logged in but missing an address
+      if (user && (!user.address || !user.phone)) {
+        try {
+          const profileRes = await fetch('http://192.168.1.7:5000/api/users/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+              name: guestName || user.name,
+              phone: guestPhone || user.phone,
+              address: guestAddress || user.address
+            })
+          });
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            setCustomerInfo({
+              ...user,
+              name: profileData.name,
+              phone: profileData.phone,
+              address: profileData.address,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to auto-save profile:', err);
+        }
+      }
+
+      const endpoint = user ? 'http://192.168.1.7:5000/api/orders' : 'http://192.168.1.7:5000/api/orders/guest';
       const headers: any = { 'Content-Type': 'application/json' };
       if (user) headers['Authorization'] = `Bearer ${user.token}`;
 
@@ -162,7 +255,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const pollPaymentStatus = (orderId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${orderId}/verify`, {
+        const res = await fetch(`http://192.168.1.7:5000/api/orders/${orderId}/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ md5 }),
@@ -185,52 +278,118 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         setPaymentStatus('FAILED');
         sessionStorage.removeItem('pendingCartQR');
       }
-    }, 300000); 
+    }, 300000);
   };
 
   const handleSimulatePay = async () => {
     if (!qrData?.orderId) return;
     try {
-      await fetch(`http://localhost:5000/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
+      await fetch(`http://192.168.1.7:5000/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
     } catch (err) {
       console.error(err);
     }
   };
 
-  if (!mounted || items.length === 0) return null;
+  if (!mounted) return null;
+
+  if (_hasHydrated && items.length === 0 && !sessionStorage.getItem('pendingCartQR')) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[60vh] px-4 text-center bg-white dark:bg-[#111111]">
+        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+          <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{isKm ? 'កន្ត្រករបស់អ្នកទទេ' : 'Your cart is empty'}</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">{isKm ? 'អ្នកមិនទាន់មានទំនិញក្នុងកន្ត្រកនៅឡើយទេដើម្បីធ្វើការទូទាត់។' : 'You have no items in your cart to checkout.'}</p>
+        <Link
+          href={`/${params.locale}`}
+          className="text-white font-semibold px-8 py-3 rounded-full hover:scale-105 transition-transform"
+          style={{ backgroundColor: primaryColor || '#000' }}
+        >
+          {isKm ? 'ត្រលប់ទៅទិញទំនិញវិញ' : 'Return to Shopping'}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111]">
 
 
       <div className="max-w-6xl mx-auto w-full px-4 py-8 pb-32 lg:grid lg:grid-cols-12 lg:gap-12 items-start">
-        
+
         {/* LEFT COLUMN */}
         <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-24 order-1 lg:order-1">
           {/* Summarized Items */}
           <div className="space-y-4">
             {items.map((item) => (
-            <div key={item.cartItemId} className="flex gap-4 pb-4 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
-              <div className={`w-16 h-16 bg-gray-50 dark:bg-gray-900 overflow-hidden shrink-0 ${themeStyle === 'neo-brutalism' ? 'rounded-none border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : themeStyle === 'minimalist' ? 'rounded-sm border border-gray-200 dark:border-gray-800' : 'rounded-lg border border-gray-100 dark:border-gray-800'}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {item.imageUrl && <img src={item.imageUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={item.title} className="w-full h-full object-cover" />}
-              </div>
-              <div className="flex-1 flex flex-col justify-center">
-                <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-0.5">{isKm && item.titleKm ? item.titleKm : item.title}</h4>
-                <div className="text-gray-500 text-xs mb-1.5">
-                  ${item.price.toFixed(2)} x {item.quantity}
+              <div key={item.cartItemId} className="flex gap-4 pb-4 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
+                <div className={`w-16 h-16 bg-gray-50 dark:bg-gray-900 overflow-hidden shrink-0 ${themeStyle === 'neo-brutalism' ? 'rounded-none border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : themeStyle === 'minimalist' ? 'rounded-sm border border-gray-200 dark:border-gray-800' : 'rounded-lg border border-gray-100 dark:border-gray-800'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {item.imageUrl && <img src={item.imageUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={item.title} className="w-full h-full object-cover" />}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Total :</span>
-                  <span className="font-semibold text-gray-900 dark:text-white text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                <div className="flex-1 flex flex-col justify-center">
+                  <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-0.5">{isKm && item.titleKm ? item.titleKm : item.title}</h4>
+                  <div className="text-gray-500 text-xs mb-1.5">
+                    ${item.price.toFixed(2)} x {item.quantity}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">Total :</span>
+                    <span className="font-semibold text-gray-900 dark:text-white text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
             ))}
           </div>
 
+          {/* Promo Code Input */}
+          <div className={`p-5 space-y-3 ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] bg-white dark:bg-[#111111]' :
+            themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm bg-gray-50/50 dark:bg-[#1a1a1a]/50' :
+              'bg-gray-50 dark:bg-gray-900 rounded-xl'
+            }`}>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{isKm ? 'លេខកូដបញ្ចុះតម្លៃ' : 'Promo Code'}</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder={isKm ? 'បញ្ចូលលេខកូដ...' : 'Enter code'}
+                value={promoInput}
+                onChange={e => setPromoInput(e.target.value)}
+                disabled={applyingPromo || !!appliedPromo}
+                className={`flex-1 px-4 py-2.5 text-sm outline-none transition-all uppercase ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:ring-0 focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
+                  themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm bg-transparent focus:border-black dark:focus:border-white' :
+                    'bg-white dark:bg-[#111111] rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
+                  }`}
+              />
+              {appliedPromo ? (
+                <button
+                  onClick={() => { setAppliedPromo(null); setDiscountAmount(0); setPromoInput(''); setPromoError(''); }}
+                  className="px-4 py-2.5 bg-red-100 text-red-600 rounded-lg text-sm font-bold hover:bg-red-200 transition-colors"
+                >
+                  {isKm ? 'ដកចេញ' : 'Remove'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleApplyPromo}
+                  disabled={applyingPromo || !promoInput.trim()}
+                  className={`px-6 py-2.5 text-sm font-bold transition-all disabled:opacity-50 ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none bg-black text-white dark:bg-white dark:text-black uppercase' :
+                    themeStyle === 'minimalist' ? 'border border-black dark:border-white bg-black text-white dark:bg-white dark:text-black rounded-sm hover:opacity-90 uppercase tracking-wider' :
+                      'bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-90'
+                    }`}
+                >
+                  {applyingPromo ? '...' : (isKm ? 'អនុវត្ត' : 'Apply')}
+                </button>
+              )}
+            </div>
+            {promoError && <p className="text-xs text-red-500 font-medium">{promoError}</p>}
+            {appliedPromo && <p className="text-xs text-green-500 font-medium">{isKm ? `លេខកូដបញ្ចុះតម្លៃ '${appliedPromo}' បានអនុវត្តដោយជោគជ័យ!` : `Promo code '${appliedPromo}' applied successfully!`}</p>}
+          </div>
+
           {/* Calculation Summary */}
-          <div className="bg-gray-50 dark:bg-gray-900 p-5 rounded-xl space-y-3">
+          <div className={`p-5 space-y-3 ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] bg-white dark:bg-[#111111]' :
+            themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm bg-gray-50/50 dark:bg-[#1a1a1a]/50' :
+              'bg-gray-50 dark:bg-gray-900 rounded-xl'
+            }`}>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">{text.totalProduct}</span>
               <span className="font-semibold text-gray-900 dark:text-white">${totalProduct.toFixed(2)}</span>
@@ -257,104 +416,252 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-7 space-y-8 mt-8 lg:mt-0 order-2 lg:order-2">
           {/* Guest Details */}
-        {!user && (
-          <div className="mb-8 border border-gray-200 dark:border-gray-800 rounded-xl p-5 shadow-sm">
+          <div className={`mb-8 p-5 ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] bg-white dark:bg-[#111111]' :
+            themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm bg-gray-50/50 dark:bg-[#1a1a1a]/50' :
+              'border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm'
+            }`}>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">{text.guestDetails}</h3>
-            <div className="space-y-4">
-              <input type="text" placeholder={text.fullName} value={guestName} onChange={e => setGuestName(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all" />
-              <input type="tel" placeholder={text.phoneNumber} value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all" />
-              <textarea placeholder={text.deliveryAddress} value={guestAddress} onChange={e => setGuestAddress(e.target.value)} rows={3}
-                className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all resize-none" />
-            </div>
-          </div>
-        )}
 
-        {/* Delivery Options */}
-        <div className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 uppercase tracking-wider">{text.deliveryPartners}</h3>
-          <div className="space-y-3">
-            {deliveryOptions.map((partner) => (
-              <label key={partner.id} className={`flex items-center gap-3 p-3 cursor-pointer transition-all ${
-                themeStyle === 'neo-brutalism' ? `border-[2px] rounded-none ${deliveryPartner === partner.id ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-[2px] -translate-y-[2px]' : 'border-black dark:border-white'}` :
-                themeStyle === 'minimalist' ? `border rounded-sm ${deliveryPartner === partner.id ? 'border-black dark:border-white' : 'border-gray-200 dark:border-gray-800'}` :
-                `border rounded-xl ${deliveryPartner === partner.id ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a]' : 'border-gray-200 dark:border-gray-800'}`
-              }`}>
-                <input type="radio" name="delivery" value={partner.id} checked={deliveryPartner === partner.id} onChange={(e) => setDeliveryPartner(e.target.value)} className="hidden" />
-                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${deliveryPartner === partner.id ? 'border-black dark:border-white' : 'border-gray-300 dark:border-gray-700'}`}>
-                  {deliveryPartner === partner.id && <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />}
+            {user ? (
+              <div className="space-y-4">
+                <div className={`p-4 bg-gray-50 dark:bg-[#1a1a1a] ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm' : 'rounded-lg border border-gray-200 dark:border-gray-800'}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{guestName}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-mono mt-0.5">{guestPhone}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">{guestAddress || (isKm ? 'សូមបញ្ចូលអាសយដ្ឋានដឹកជញ្ជូន' : 'Please provide a shipping address')}</p>
+                    </div>
+                  </div>
                 </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={partner.logo} alt={partner.name} className="h-8 w-12 object-contain mix-blend-multiply dark:mix-blend-normal bg-white rounded p-1 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1" style={{ fontFamily: 'var(--font-kantumruy), sans-serif' }}>{partner.name}</span>
-                  <span className="text-xs text-gray-500 line-clamp-1 mt-0.5">{partner.desc}</span>
-                </div>
-                <span className="text-sm font-bold text-green-600 dark:text-green-400 shrink-0">${partner.fee.toFixed(2)}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Delivery Note */}
-        <div className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{text.deliveryNote}</h3>
-          <input type="text" placeholder={text.deliveryNotePlaceholder} value={deliveryNote} onChange={e => setDeliveryNote(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white transition-all" />
-        </div>
-
-        {/* Payment Options */}
-        <div className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{text.paymentMethod}</h3>
-          <p className="text-xs text-gray-500 mb-3">{text.acceptedPaymentMethods}</p>
-          <div className={`flex items-start gap-3 p-4 bg-gray-50 dark:bg-[#1a1a1a] ${
-            themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' :
-            themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-700 rounded-sm' :
-            'border border-black dark:border-white rounded-xl'
-          }`}>
-            <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white font-black text-xs">KHQR</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bakong KHQR</h4>
-                <span className="text-[10px] font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">• {text.instantApproval}</span>
+                <button
+                  onClick={() => {
+                    setTempName('');
+                    setTempPhone('');
+                    setTempAddress('');
+                    setIsAddressModalOpen(true);
+                  }}
+                  className={`w-full py-2.5 text-sm font-semibold transition-all ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white bg-white dark:bg-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
+                    themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 hover:border-black dark:hover:border-white' :
+                      'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg'
+                    }`}
+                >
+                  {isKm ? 'បញ្ចូលអាសយដ្ឋានថ្មី' : 'Add New Address'}
+                </button>
+                {guestAddress !== user?.address && (
+                  <button
+                    onClick={() => {
+                      setGuestName(user?.name || '');
+                      setGuestPhone(user?.phone || '');
+                      setGuestAddress(user?.address || '');
+                    }}
+                    className="text-sm font-semibold text-gray-500 hover:text-black dark:hover:text-white underline mt-2 text-center w-full block"
+                  >
+                    {isKm ? 'ត្រលប់ទៅអាសយដ្ឋានដើម' : 'Use default address'}
+                  </button>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{text.bakongPayment}</p>
+            ) : (
+              <div className="space-y-4">
+                <input type="text" placeholder={text.fullName} value={guestName} onChange={e => setGuestName(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all" />
+                <input type="tel" placeholder={text.phoneNumber} value={guestPhone} onChange={e => setGuestPhone(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all" />
+                <textarea placeholder={text.deliveryAddress} value={guestAddress} onChange={e => setGuestAddress(e.target.value)} rows={3}
+                  className="w-full bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm rounded-lg outline-none border border-transparent focus:border-black dark:focus:border-white transition-all resize-none" />
+              </div>
+            )}
+          </div>
+
+          {/* Delivery Options */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">{text.deliveryPartners}</h3>
+              {store?.deliverySettings?.isFreeDeliveryEnabled && store?.deliverySettings?.freeDeliveryThreshold > 0 && (
+                <span className={`text-xs font-bold px-2 py-1 ${totalProduct >= store.deliverySettings.freeDeliveryThreshold
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  } ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'rounded-full'}`}>
+                  {totalProduct >= store.deliverySettings.freeDeliveryThreshold
+                    ? (isKm ? 'អ្នកទទួលបានការដឹកជញ្ជូនឥតគិតថ្លៃ!' : 'You get free delivery!')
+                    : (isKm
+                      ? `ទិញបន្ថែម $${(store.deliverySettings.freeDeliveryThreshold - totalProduct).toFixed(2)} ទៀតដើម្បីបានដឹកជញ្ជូនឥតគិតថ្លៃ`
+                      : `Buy $${(store.deliverySettings.freeDeliveryThreshold - totalProduct).toFixed(2)} more for Free Delivery`)}
+                </span>
+              )}
+            </div>
+            <div className="space-y-3">
+              {deliveryOptions.map((partner) => (
+                <label key={partner.id} className={`flex items-center gap-3 p-3 cursor-pointer transition-all ${themeStyle === 'neo-brutalism' ? `border-[2px] rounded-none ${deliveryPartner === partner.id ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-[2px] -translate-y-[2px]' : 'border-black dark:border-white'}` :
+                  themeStyle === 'minimalist' ? `border rounded-sm ${deliveryPartner === partner.id ? 'border-black dark:border-white' : 'border-gray-200 dark:border-gray-800'}` :
+                    `border rounded-xl ${deliveryPartner === partner.id ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a]' : 'border-gray-200 dark:border-gray-800'}`
+                  }`}>
+                  <input type="radio" name="delivery" value={partner.id} checked={deliveryPartner === partner.id} onChange={(e) => setDeliveryPartner(e.target.value)} className="hidden" />
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${deliveryPartner === partner.id ? 'border-black dark:border-white' : 'border-gray-300 dark:border-gray-700'}`}>
+                    {deliveryPartner === partner.id && <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />}
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={partner.logo} alt={partner.name} className="h-8 w-12 object-contain mix-blend-multiply dark:mix-blend-normal bg-white rounded p-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1" style={{ fontFamily: 'var(--font-kantumruy), sans-serif' }}>{partner.name}</span>
+                    <span className="text-xs text-gray-500 line-clamp-1 mt-0.5">{partner.desc}</span>
+                  </div>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400 shrink-0">
+                    {(store?.deliverySettings?.isFreeDeliveryEnabled && store?.deliverySettings?.freeDeliveryThreshold > 0 && totalProduct >= store.deliverySettings.freeDeliveryThreshold)
+                      ? <span className="text-green-500 uppercase">FREE</span>
+                      : `$${partner.fee.toFixed(2)}`}
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Checkout Button */}
-        {(store as any)?.plan?.planId?.price === 0 ? (
-          <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 py-4 rounded-xl text-center text-sm font-semibold">
-            <span className="block mb-1 text-gray-800 dark:text-gray-200">{text.onlinePaymentsUnavailable}</span>
-            {text.freePlanMessage}
+          {/* Delivery Note */}
+          <div className="mb-8">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{text.deliveryNote}</h3>
+            <input type="text" placeholder={text.deliveryNotePlaceholder} value={deliveryNote} onChange={e => setDeliveryNote(e.target.value)}
+              className={`w-full px-4 py-3 text-sm outline-none transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-gray-50 dark:bg-[#111111] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
+                themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm bg-transparent focus:border-black dark:focus:border-white' :
+                  'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
+                }`} />
           </div>
-        ) : (
-          <button onClick={handleCheckout} disabled={loading}
-            className="w-full py-4 text-lg font-bold bg-black dark:bg-white text-white dark:text-black rounded-xl shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? text.processing : text.checkoutBtn}
-          </button>
-        )}
+
+          {/* Payment Options */}
+          <div className="mb-8">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{text.paymentMethod}</h3>
+            <p className="text-xs text-gray-500 mb-3">{text.acceptedPaymentMethods}</p>
+            <div className="space-y-3">
+              {/* Option 1: KHQR */}
+              <label className={`flex items-start gap-3 p-4 cursor-pointer transition-all ${themeStyle === 'neo-brutalism' ? `border-[3px] rounded-none ${paymentMethod === 'KHQR' ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-black dark:border-white'}` :
+                themeStyle === 'minimalist' ? `border rounded-sm ${paymentMethod === 'KHQR' ? 'border-black dark:border-white' : 'border-gray-200 dark:border-gray-700'}` :
+                  `border rounded-xl ${paymentMethod === 'KHQR' ? 'border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a]' : 'border-gray-200 dark:border-gray-800'}`
+                }`}>
+                <input type="radio" checked={paymentMethod === 'KHQR'} onChange={() => setPaymentMethod('KHQR')} className="hidden" />
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-2 ${paymentMethod === 'KHQR' ? 'border-black dark:border-white' : 'border-gray-300 dark:border-gray-600'}`}>
+                  {paymentMethod === 'KHQR' && <div className="w-2.5 h-2.5 rounded-full bg-black dark:bg-white"></div>}
+                </div>
+                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center shrink-0 p-1.5">
+                  <img src="/logo/KHQR Logo.png" alt="KHQR" className="w-full h-full object-contain brightness-0 invert" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">Bakong KHQR</h4>
+                    <span className="text-[10px] font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded-full">• {text.instantApproval}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{text.bakongPayment}</p>
+                </div>
+              </label>
+
+            </div>
+          </div>
+
+          {/* Checkout Button */}
+          {(store as any)?.plan?.planId?.price === 0 ? (
+            <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 py-4 rounded-xl text-center text-sm font-semibold">
+              <span className="block mb-1 text-gray-800 dark:text-gray-200">{text.onlinePaymentsUnavailable}</span>
+              {text.freePlanMessage}
+            </div>
+          ) : (
+            <button
+              onClick={handleCheckout}
+              disabled={loading || paymentStatus === 'PENDING'}
+              className={`w-full py-4 text-lg font-bold text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest' :
+                themeStyle === 'minimalist' ? 'rounded-sm tracking-widest uppercase hover:opacity-90' :
+                  'rounded-xl shadow-xl hover:scale-[1.01] active:scale-[0.99]'
+                }`}
+              style={{ backgroundColor: primaryColor || '#000' }}
+            >
+              {loading ? text.processing : text.checkoutBtn}
+            </button>
+          )}
         </div>
       </div>
 
       {/* QR Modal */}
       {qrData && (
         <BakongKHQRModal
-          qrString={qrData!.qrString}
-          amount={grandTotal}
-          currency="USD"
+          qrString={qrData.qrString}
+          amount={qrData.totalAmount}
+          currency={qrData.currency}
           merchantName={store?.name || "ShoppingOT Merchant"}
           isPaid={paymentStatus === 'PAID'}
           locale={params.locale}
           onClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); }}
-          onSuccessClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); router.push(`/${params.locale}`); }}
+          onSuccessClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); window.location.href = `/${params.locale}`; }}
           onSimulatePay={handleSimulatePay}
         />
+      )}
+
+      {/* Change Address Modal */}
+      {isAddressModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className={`w-full max-w-md bg-white dark:bg-[#111111] p-6 ${themeStyle === 'neo-brutalism'
+            ? 'border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none'
+            : 'rounded-2xl shadow-xl'
+            } overflow-hidden`}>
+
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+              {isKm ? 'បញ្ចូលអាសយដ្ឋានថ្មី' : 'Enter New Address'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'ឈ្មោះពេញ' : 'Full Name'}</label>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  className={`w-full px-4 py-3 text-sm outline-none transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
+                    }`}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'លេខទូរស័ព្ទ' : 'Phone Number'}</label>
+                <input
+                  type="tel"
+                  value={tempPhone}
+                  onChange={e => setTempPhone(e.target.value)}
+                  className={`w-full px-4 py-3 text-sm outline-none transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
+                    }`}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'អាសយដ្ឋានដឹកជញ្ជូន' : 'Address'}</label>
+                <textarea
+                  value={tempAddress}
+                  onChange={e => setTempAddress(e.target.value)}
+                  rows={3}
+                  className={`w-full px-4 py-3 text-sm outline-none transition-all resize-none ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
+                    }`}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setIsAddressModalOpen(false)}
+                className={`flex-1 py-3 text-sm font-bold transition-all ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white bg-white dark:bg-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-black dark:text-white' :
+                  'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+              >
+                {isKm ? 'បោះបង់' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => {
+                  setGuestName(tempName);
+                  setGuestPhone(tempPhone);
+                  setGuestAddress(tempAddress);
+                  setIsAddressModalOpen(false);
+                }}
+                className={`flex-1 py-3 text-sm font-bold text-white transition-all ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
+                  'rounded-lg shadow-md hover:opacity-90'
+                  }`}
+                style={{ backgroundColor: primaryColor || '#000' }}
+              >
+                {isKm ? 'ប្រើប្រាស់អាសយដ្ឋាននេះ' : 'Use this address'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

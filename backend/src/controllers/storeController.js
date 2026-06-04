@@ -120,6 +120,12 @@ const updateStore = async (req, res) => {
           ...contact,
         };
       }
+      if (req.body.deliverySettings) {
+        store.deliverySettings = {
+          ...(store.deliverySettings?.toObject ? store.deliverySettings.toObject() : store.deliverySettings),
+          ...req.body.deliverySettings,
+        };
+      }
 
       const updatedStore = await store.save();
       res.json(updatedStore);

@@ -1,6 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Overrides for KHQR Modal to bypass global .lang-km !important rules */
+#khqr-modal, #khqr-modal * {
+  font-family: 'Nunito Sans', sans-serif !important;
+}
+#khqr-modal .font-bold {
+  font-weight: 700 !important;
+}
+#khqr-modal .font-medium {
+  font-weight: 500 !important;
+}
 
 :root {
   --background: #ffffff;

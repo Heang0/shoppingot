@@ -42,6 +42,7 @@ export default function BakongKHQRModal({
     status: isKm ? 'ស្ថានភាព' : 'Status',
     waiting: isKm ? 'កំពុងរង់ចាំ...' : 'Waiting...',
     simulatePayment: isKm ? '[DEV] សាកល្បងការទូទាត់' : '[DEV] Simulate Payment',
+    openBakongApp: isKm ? 'បើកកម្មវិធីបាគង' : 'Open Bakong App',
   };
 
   useEffect(() => {
@@ -66,16 +67,17 @@ export default function BakongKHQRModal({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
 
       {/* Main Container */}
       <div className="relative flex flex-col items-center">
 
-        {/* KHQR Card */}
         <div
+          id="khqr-modal"
           className="bg-white rounded-2xl relative overflow-hidden flex flex-col"
-          style={{ width: '330px', height: '479px', fontFamily: '"Nunito Sans", sans-serif', boxShadow: '0 0 16px rgba(0,0,0,0.1)' }}
+          style={{ width: '330px', height: '479px', boxShadow: '0 0 16px rgba(0,0,0,0.1)' }}
         >
           {/* Header */}
           <div className="h-[57px] bg-[#E1232E] w-full shrink-0 flex items-center justify-center relative z-10">
@@ -95,7 +97,7 @@ export default function BakongKHQRModal({
             <div className="text-left w-full mb-auto">
               <div className="text-[#000000] text-[14px] font-normal leading-none mb-2 truncate">{merchantName}</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-[#000000] text-[31px] font-bold leading-none tracking-[0px]">{amount.toFixed(2)}</span>
+                <span className="text-[#000000] text-[31px] font-bold leading-none tracking-[0px]" style={{ fontFamily: '"Nunito Sans", sans-serif' }}>{amount.toFixed(2)}</span>
                 <span className="text-[#000000] text-[14px] font-normal leading-none tracking-[0px]">{currency}</span>
               </div>
             </div>
@@ -103,28 +105,25 @@ export default function BakongKHQRModal({
             {/* Dashed Line Separator */}
             <div className="w-full border-t-[2px] border-dashed border-gray-300/80 my-2"></div>
 
-            {/* QR Code Section */}
             <div className="w-full aspect-square relative mt-4 mx-auto max-w-[234px] flex items-center justify-center bg-white">
               <QRCodeSVG value={qrString} size={234} />
 
               {/* Center Coin Badge */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[42px] h-[42px] bg-[#000000] rounded-full flex items-center justify-center border-[3px] border-[#FFFFFF] box-content">
-                <span className="text-white font-bold text-xl leading-none pt-0.5">$</span>
+                <span className="text-white font-medium text-xl leading-none pt-0.5">$</span>
               </div>
             </div>
 
           </div>
 
-          {/* Overlays inside the card structure */}
-
           {/* Cancel Confirmation */}
           {showCancelConfirm && !isPaid && (
             <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{text.cancelPayment}</h3>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">{text.cancelPayment}</h3>
               <p className="text-sm text-gray-500 mb-8">{text.cancelConfirm}</p>
               <div className="flex w-full gap-3">
-                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200">{text.no}</button>
-                <button onClick={confirmCancel} className="flex-1 py-3 bg-[#E1232E] text-white font-bold rounded-xl hover:bg-red-700">{text.yes}</button>
+                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-900 font-medium rounded-xl hover:bg-gray-200">{text.no}</button>
+                <button onClick={confirmCancel} className="flex-1 py-3 bg-[#E1232E] text-white font-medium rounded-xl hover:bg-red-700">{text.yes}</button>
               </div>
             </div>
           )}
@@ -135,21 +134,20 @@ export default function BakongKHQRModal({
               <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle2 size={48} className="text-green-500" strokeWidth={2.5} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{text.paymentSuccessful}</h3>
+              <h3 className="text-2xl font-medium text-gray-900 mb-2">{text.paymentSuccessful}</h3>
               <p className="text-sm text-gray-500 mb-8">{text.verified}</p>
-              <button onClick={onSuccessClose || onClose} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black shadow-lg">
+              <button onClick={onSuccessClose || onClose} className="w-full py-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-black shadow-lg">
                 {text.continue}
               </button>
             </div>
           )}
-
         </div>
 
         {/* Floating Details (Outside Card) */}
         <div className="w-[330px] mt-6 flex flex-col gap-3">
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
             <span className="font-medium">{text.expiresIn}</span>
-            <span className="font-bold tracking-widest font-mono">{formatTime(timeLeft)}</span>
+            <span className="font-bold tracking-widest" style={{ fontFamily: '"Nunito Sans", sans-serif' }}>{formatTime(timeLeft)}</span>
           </div>
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
             <span className="font-medium">{text.status}</span>
@@ -158,7 +156,7 @@ export default function BakongKHQRModal({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
               </span>
-              <span className="font-semibold text-blue-100">{text.waiting}</span>
+              <span className="font-medium text-blue-100">{text.waiting}</span>
             </div>
           </div>
         </div>
@@ -167,7 +165,7 @@ export default function BakongKHQRModal({
         {onSimulatePay && !isPaid && (
           <button
             onClick={onSimulatePay}
-            className="mt-4 bg-[#E1232E] text-white text-xs font-bold uppercase tracking-widest py-2 px-6 rounded-full hover:bg-red-700 shadow-[0_0_15px_rgba(225,35,46,0.5)] border border-red-500/50"
+            className="mt-4 bg-[#E1232E] text-white text-xs font-medium uppercase tracking-widest py-2 px-6 rounded-full hover:bg-red-700 shadow-[0_0_15px_rgba(225,35,46,0.5)] border border-red-500/50"
           >
             {text.simulatePayment}
           </button>
