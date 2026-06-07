@@ -47,7 +47,7 @@ export default function ManageProducts() {
 
   useEffect(() => {
     // 1. Get store id
-    fetch('http://192.168.1.7:5000/api/stores', {
+    fetch('http://localhost:5000/api/stores', {
       headers: { Authorization: `Bearer ${user?.token}` }
     })
       .then(res => res.json())
@@ -62,7 +62,7 @@ export default function ManageProducts() {
       .catch(console.error);
 
     // 2. Fetch categories
-    fetch('http://192.168.1.7:5000/api/categories', {
+    fetch('http://localhost:5000/api/categories', {
       headers: { Authorization: `Bearer ${user?.token}` }
     })
       .then(res => res.json())
@@ -74,7 +74,7 @@ export default function ManageProducts() {
 
   const fetchProducts = async (sid: string, page: number = 1) => {
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/products/store/${sid}?page=${page}&limit=10`);
+      const res = await fetch(`http://localhost:5000/api/products/store/${sid}?page=${page}&limit=10`);
       const data = await res.json();
       if (res.ok) {
         setProducts(data.products || []);
@@ -93,7 +93,7 @@ export default function ManageProducts() {
     formData.append('image', file);
 
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/upload?type=product', {
+      const res = await fetch('http://localhost:5000/api/upload?type=product', {
         method: 'POST',
         body: formData, // No Auth headers for this mock public route
       });
@@ -117,7 +117,7 @@ export default function ManageProducts() {
       const formData = new FormData();
       formData.append('image', file);
       try {
-        const res = await fetch('http://192.168.1.7:5000/api/upload?type=product', {
+        const res = await fetch('http://localhost:5000/api/upload?type=product', {
           method: 'POST',
           body: formData,
         });
@@ -157,8 +157,8 @@ export default function ManageProducts() {
       };
 
       const url = editingProduct
-        ? `http://192.168.1.7:5000/api/products/${editingProduct._id}`
-        : 'http://192.168.1.7:5000/api/products';
+        ? `http://localhost:5000/api/products/${editingProduct._id}`
+        : 'http://localhost:5000/api/products';
 
       const method = editingProduct ? 'PUT' : 'POST';
 
@@ -188,7 +188,7 @@ export default function ManageProducts() {
   const handleDelete = async (id: string) => {
     if (!confirm(t('confirm_delete'))) return;
     try {
-      await fetch(`http://192.168.1.7:5000/api/products/${id}`, {
+      await fetch(`http://localhost:5000/api/products/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -200,7 +200,7 @@ export default function ManageProducts() {
 
   const handleToggleFlag = async (productId: string, flag: 'isBestSeller', currentValue: boolean) => {
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/products/${productId}`, {
+      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

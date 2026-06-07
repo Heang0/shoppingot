@@ -24,6 +24,7 @@ export default function UpgradePlan() {
   const [storeId, setStoreId] = useState<string | null>(null);
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
   const [currentStorePlan, setCurrentStorePlan] = useState<any>(null);
+  const [storeData, setStoreData] = useState<any>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -55,12 +56,12 @@ export default function UpgradePlan() {
   const fetchData = async () => {
     try {
       // Fetch plans
-      const plansRes = await fetch('http://192.168.1.7:5000/api/superadmin/plans');
+      const plansRes = await fetch('http://localhost:5000/api/superadmin/plans');
       const plansData = await plansRes.json();
       setPlans(plansData);
 
       // Fetch user's store
-      const storesRes = await fetch('http://192.168.1.7:5000/api/stores', {
+      const storesRes = await fetch('http://localhost:5000/api/stores', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const storesData = await storesRes.json();
@@ -68,6 +69,7 @@ export default function UpgradePlan() {
       const myStore = storesData.find((s: any) => s.ownerId._id === user?._id || s.ownerId === user?._id);
       if (myStore) {
         setStoreId(myStore._id);
+        setStoreData(myStore);
         setCurrentStorePlan(myStore.plan);
         if (myStore.plan && myStore.plan.planId) {
           setCurrentPlanId(myStore.plan.planId._id || myStore.plan.planId);
@@ -90,7 +92,7 @@ export default function UpgradePlan() {
     const selected = plans.find(p => p._id === planId);
     if (selected && selected.price === 0) {
       try {
-        const res = await fetch('http://192.168.1.7:5000/api/subscription/free-plan', {
+        const res = await fetch('http://localhost:5000/api/subscription/free-plan', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -112,7 +114,7 @@ export default function UpgradePlan() {
     }
 
     try {
-        const res = await fetch('http://192.168.1.7:5000/api/subscription/generate-qr', {
+        const res = await fetch('http://localhost:5000/api/subscription/generate-qr', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -141,7 +143,7 @@ export default function UpgradePlan() {
   const pollPaymentStatus = (paymentId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('http://192.168.1.7:5000/api/subscription/verify', {
+        const res = await fetch('http://localhost:5000/api/subscription/verify', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -180,7 +182,7 @@ export default function UpgradePlan() {
   const handleSimulatePay = async () => {
     if (!qrData?.paymentId) return;
     try {
-      await fetch(`http://192.168.1.7:5000/api/subscription/simulate-pay`, {
+      await fetch(`http://localhost:5000/api/subscription/simulate-pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentId: qrData.paymentId }),
@@ -256,7 +258,52 @@ export default function UpgradePlan() {
       {loading ? (
         <p className="text-gray-500 dark:text-gray-400">{t('loading')}</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <>
+          {/* Current Subscription Overview */}
+          {storeData && currentStorePlan && (
+            <div className="bg-white dark:bg-[#111111] border border-gray-100 dark:border-gray-800 rounded-2xl p-6 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                  {isKm ? 'គម្រោងបច្ចុប្បន្នរបស់អ្នក' : 'Your Current Plan'}
+                </h3>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {currentStorePlan?.planId?.name || 'Free'}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    isExpired() 
+                      ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
+                    {isExpired() ? (isKm ? 'ហួសកំណត់' : 'Expired') : (isKm ? 'សកម្ម' : 'Active')}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {currentStorePlan?.expiresAt 
+                    ? `${isKm ? 'ផុតកំណត់: ' : 'Expires on: '} ${new Date(currentStorePlan.expiresAt).toLocaleDateString(isKm ? 'km-KH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+                    : (isKm ? 'គម្រោងឥតគិតថ្លៃ (មិនមានថ្ងៃផុតកំណត់)' : 'Free Plan (Never expires)')}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                {storeData.branding?.logoUrl ? (
+                  <div className="w-[120px] h-auto max-h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center shrink-0">
+                    <img src={storeData.branding.logoUrl} alt="Store Logo" className="w-full h-full object-contain p-1" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-[#E84C3D] rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+                    {storeData.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">{storeData.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{storeData.slug}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
             <div 
               key={plan._id} 
@@ -329,7 +376,8 @@ export default function UpgradePlan() {
               )}
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Payment Method Section (Modern, non-brutalist styling) */}

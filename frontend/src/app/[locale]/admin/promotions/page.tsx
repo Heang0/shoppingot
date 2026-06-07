@@ -25,7 +25,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
 
   const fetchPromos = async (currentStoreId: string) => {
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/promos/store/${currentStoreId}`, {
+      const res = await fetch(`http://localhost:5000/api/promos/store/${currentStoreId}`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -39,7 +39,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
 
   useEffect(() => {
     if (user?.token) {
-      fetch('http://192.168.1.7:5000/api/stores', {
+      fetch('http://localhost:5000/api/stores', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       .then(res => res.json())
@@ -68,7 +68,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
     }
 
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/promos', {
+      const res = await fetch('http://localhost:5000/api/promos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
 
   const togglePromo = async (id: string) => {
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/promos/${id}/toggle`, {
+      const res = await fetch(`http://localhost:5000/api/promos/${id}/toggle`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -113,7 +113,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
   const deletePromo = async (id: string) => {
     if (!confirm('Are you sure you want to delete this promo code?')) return;
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/promos/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/promos/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });

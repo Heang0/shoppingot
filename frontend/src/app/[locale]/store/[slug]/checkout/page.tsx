@@ -117,7 +117,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
       } catch (e) { }
     }
 
-    fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`)
+    fetch(`http://localhost:5000/api/stores/${params.slug}`)
       .then(res => res.json())
       .then(data => {
         setStoreId(data._id);
@@ -147,7 +147,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     setApplyingPromo(true);
     setPromoError('');
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/promos/validate', {
+      const res = await fetch('http://localhost:5000/api/promos/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -201,7 +201,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
       // Auto-save address to profile if they are logged in but missing an address
       if (user && (!user.address || !user.phone)) {
         try {
-          const profileRes = await fetch('http://192.168.1.7:5000/api/users/profile', {
+          const profileRes = await fetch('http://localhost:5000/api/users/profile', {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         }
       }
 
-      const endpoint = user ? 'http://192.168.1.7:5000/api/orders' : 'http://192.168.1.7:5000/api/orders/guest';
+      const endpoint = user ? 'http://localhost:5000/api/orders' : 'http://localhost:5000/api/orders/guest';
       const headers: any = { 'Content-Type': 'application/json' };
       if (user) headers['Authorization'] = `Bearer ${user.token}`;
 
@@ -255,7 +255,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const pollPaymentStatus = (orderId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://192.168.1.7:5000/api/orders/${orderId}/verify`, {
+        const res = await fetch(`http://localhost:5000/api/orders/${orderId}/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ md5 }),
@@ -284,7 +284,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const handleSimulatePay = async () => {
     if (!qrData?.orderId) return;
     try {
-      await fetch(`http://192.168.1.7:5000/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
+      await fetch(`http://localhost:5000/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
     } catch (err) {
       console.error(err);
     }

@@ -47,7 +47,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
@@ -55,11 +55,11 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
         setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
         setBannerUrl(store.branding?.bannerUrl || null);
 
-        const prodRes = await fetch(`http://192.168.1.7:5000/api/products/store/${store._id}`);
+        const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
         const prods = await prodRes.json();
         setProducts(prods.products || []);
 
-        const catRes = await fetch(`http://192.168.1.7:5000/api/categories/store/${store._id}`);
+        const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
           const cats = await catRes.json();
           setCategories(cats);
@@ -107,7 +107,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
     } else if (themeStyle === 'minimalist') {
       return `whitespace-nowrap pb-1 border-b transition-all tracking-widest uppercase text-xs ${isActive ? 'font-medium text-black dark:text-white border-black dark:border-white' : 'font-light text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-300'}`;
     } else {
-      return `whitespace-nowrap text-sm pb-1 border-b-2 transition-all ${isActive ? 'font-semibold text-gray-900 dark:text-white border-gray-900 dark:border-white' : 'font-medium text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-300'}`;
+      return `whitespace-nowrap text-sm pb-1 border-b-2 transition-all ${isActive ? 'font-bold text-gray-900 dark:text-white border-gray-900 dark:border-white' : 'font-semibold text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-300'}`;
     }
   };
 
@@ -180,29 +180,23 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
             {categories.length > 0 && viewMode !== 'promotions' && (
               <div className={`flex gap-5 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 ${themeStyle === 'neo-brutalism' ? 'pt-2' : ''}`}>
                 <Link
-                  href={getAppendParams(viewMode === 'promotions' ? `/${params.locale}/promotions` : `/${params.locale}/products`)}
+                  href={getAppendParams(`/${params.locale}/products`)}
                   className={getCategoryClass(activeCategorySlug === 'All')}
                 >
-                  {allLabel} ({viewMode === 'promotions' ? bestSellers.length : products.length})
+                  {allLabel} ({products.length})
                 </Link>
                 {categories
                   .filter(cat => products.some(p => {
-                    if (viewMode === 'promotions' && !p.isBestSeller) return false;
                     const pCat = p.category?._id ?? p.category;
                     return String(pCat) === String(cat._id);
                   }))
                   .map(cat => {
                     const count = products.filter(p => {
-                      if (viewMode === 'promotions' && !p.isBestSeller) return false;
                       const pCat = p.category?._id ?? p.category;
                       return String(pCat) === String(cat._id);
                     }).length;
 
-                    const catHref = getAppendParams(
-                      viewMode === 'promotions' 
-                        ? `/${params.locale}/promotions/category/${cat.slug}`
-                        : `/${params.locale}/category/${cat.slug}`
-                    );
+                    const catHref = getAppendParams(`/${params.locale}/category/${cat.slug}`);
 
                     return (
                       <Link
@@ -257,12 +251,15 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
             {/* Best Sellers Section */}
             {bestSellers.length > 0 && (
               <section>
-                <div className="mb-6">
+                <div className="flex items-center justify-between mb-6">
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{isKm ? 'លក់ដាច់បំផុត' : 'Best Sellers'}</h3>
                 </div>
-                <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-                  {bestSellers.map(product => (
-                    <div key={product._id} className="w-[160px] sm:w-[220px] md:w-[260px] shrink-0">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+                  {bestSellers.slice(0, 10).map((product, index) => (
+                    <div 
+                      key={product._id} 
+                      className={`w-full ${index >= 6 ? 'hidden lg:block' : ''}`}
+                    >
                       <ProductCard 
                         product={product} 
                         primaryColor={primaryColor} 

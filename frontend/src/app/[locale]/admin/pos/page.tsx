@@ -49,7 +49,7 @@ export default function POSPage() {
 
   const fetchStoreAndProducts = async () => {
     try {
-      const storeRes = await fetch('http://192.168.1.7:5000/api/stores', {
+      const storeRes = await fetch('http://localhost:5000/api/stores', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const storeData = await storeRes.json();
@@ -57,7 +57,7 @@ export default function POSPage() {
       
       if (myStore) {
         setStore(myStore);
-        const prodRes = await fetch(`http://192.168.1.7:5000/api/products/store/${myStore._id}?limit=1000`);
+        const prodRes = await fetch(`http://localhost:5000/api/products/store/${myStore._id}?limit=1000`);
         const prodData = await prodRes.json();
         setProducts(prodData.products || []);
       }
@@ -170,7 +170,7 @@ export default function POSPage() {
         guestInfo: { name: 'Walk-in Customer' } // Default POS customer
       };
 
-      const res = await fetch('http://192.168.1.7:5000/api/orders', {
+      const res = await fetch('http://localhost:5000/api/orders', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -206,7 +206,7 @@ export default function POSPage() {
   const pollPaymentStatus = (orderId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://192.168.1.7:5000/api/orders/${orderId}/verify`, {
+        const res = await fetch(`http://localhost:5000/api/orders/${orderId}/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ md5 })

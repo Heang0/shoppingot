@@ -32,14 +32,14 @@ export default function FavoritesPage({ params }: { params: { locale: string; sl
   useEffect(() => {
     const loadStoreAndProducts = async () => {
       try {
-        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
         setPrimaryColor(store.branding?.primaryColor || '#000000');
         setThemeStyle(store.branding?.themeStyle || 'default');
 
-        const prodRes = await fetch(`http://192.168.1.7:5000/api/products/store/${store._id}`);
+        const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
         const prods = await prodRes.json();
         
         // Filter products that are in the favorites store
@@ -73,7 +73,7 @@ export default function FavoritesPage({ params }: { params: { locale: string; sl
   };
 
   return (
-    <div className="w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-8 sm:py-12 space-y-10 min-h-[70vh]">
+    <div className="w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-4 pb-24 sm:pt-8 space-y-8 min-h-[70vh]">
       <AddToCartToast message={toast.message} visible={toast.visible} />
       
       <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-6">

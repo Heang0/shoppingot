@@ -22,7 +22,7 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
     setMounted(true);
     const fetchTheme = async () => {
       try {
-        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${slug}`);
+        const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
         if (storeRes.ok) {
           const store = await storeRes.json();
           const previewTheme = searchParams.get('theme');

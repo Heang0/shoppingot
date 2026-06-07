@@ -23,7 +23,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/auth/register', {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, role: 'store_admin' }),
@@ -47,60 +47,69 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <div className="flex justify-center mb-6">
+          <Link href="/">
+            <img 
+              src="/logo/logo-website.png" 
+              alt="ShoppingOT Logo" 
+              className="h-14 w-auto object-contain" 
+            />
+          </Link>
+        </div>
+        <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Create your ShoppingOT account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Start selling with KHQR payments today
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-[#111111] py-8 px-4 shadow-xl sm:rounded-[2rem] sm:px-10 border border-gray-100 dark:border-gray-800">
           <form className="space-y-6" onSubmit={handleRegister}>
             {error && (
-              <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
+              <div className="w-full bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 p-3 rounded-lg text-sm text-center border border-red-200 dark:border-red-800/50">
                 {error}
               </div>
             )}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
               <div className="mt-1">
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm bg-white dark:bg-[#050505] text-gray-900 dark:text-white focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email address</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
               <div className="mt-1">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm bg-white dark:bg-[#050505] text-gray-900 dark:text-white focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
               <div className="mt-1">
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm"
+                  className="appearance-none block w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm bg-white dark:bg-[#050505] text-gray-900 dark:text-white focus:outline-none focus:ring-[#E84C3D] focus:border-[#E84C3D] sm:text-sm transition-colors"
                 />
               </div>
             </div>
@@ -109,7 +118,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#E84C3D] hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E84C3D] disabled:opacity-50"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-[#E84C3D] hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E84C3D] disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creating account...' : t('register')}
               </button>
@@ -119,15 +128,15 @@ export default function RegisterPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-gray-200 dark:border-gray-800" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Already have an account?</span>
+                <span className="px-2 bg-white dark:bg-[#111111] text-gray-500 dark:text-gray-400">Already have an account?</span>
               </div>
             </div>
 
             <div className="mt-6">
-              <Link href="/login" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+              <Link href="/login" className="w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-full shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#050505] hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
                 {t('login')}
               </Link>
             </div>

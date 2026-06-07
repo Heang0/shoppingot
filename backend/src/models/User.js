@@ -9,12 +9,16 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true, // Allows nulls to not clash on unique constraint
     },
     password: {
       type: String,
-      required: true,
+    },
+    telegramId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     role: {
       type: String,

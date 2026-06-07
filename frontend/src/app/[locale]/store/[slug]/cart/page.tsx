@@ -26,7 +26,7 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
 
   useEffect(() => {
     setMounted(true);
-    fetch(`http://192.168.1.7:5000/api/stores/${params.slug}`)
+    fetch(`http://localhost:5000/api/stores/${params.slug}`)
       .then(res => res.json())
       .then(data => {
         const previewTheme = searchParams.get('theme');

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
+import TelegramLoginButton from 'react-telegram-login';
 
 export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { primaryColor: string, themeStyle: string, isKm: boolean }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,7 +23,7 @@ export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { 
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const body = isLogin ? { email, password } : { name, email, password, role: 'customer' };
 
-      const res = await fetch(`http://192.168.1.7:5000${endpoint}`, {
+      const res = await fetch(`http://localhost:5000${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -37,6 +38,39 @@ export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { 
       // Check role safety if logging in
       if (isLogin && data.role !== 'customer') {
         throw new Error('Admins cannot log in as customers on the storefront.');
+      }
+
+      setCustomerInfo({
+        _id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        token: data.token,
+        profilePic: data.profilePic,
+      });
+      
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTelegramResponse = async (response: any) => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(response),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Telegram authentication failed');
       }
 
       setCustomerInfo({
@@ -87,16 +121,15 @@ export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { 
       </div>
 
       <div className="space-y-6">
-        {/* Telegram Placeholder Button */}
-        <button 
-          className={googleButtonClass}
-          onClick={() => alert(isKm ? 'សូមបញ្ចូល Bot Token ជាមុនសិន!' : 'We need your Telegram Bot Token and Username before this works!')}
-        >
-          <svg className="w-5 h-5 text-[#24A1DE]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.686c.223-.204-.054-.31-.35-.11L7.464 14.54l-2.76-.86c-.6-.188-.61-.6.125-.89l10.736-4.135c.496-.182.936.108.795.845z"/>
-          </svg>
-          {isLogin ? (isKm ? 'ចូលជាមួយ Telegram' : 'Continue with Telegram') : (isKm ? 'ចុះឈ្មោះជាមួយ Telegram' : 'Continue with Telegram')}
-        </button>
+        <div className="flex justify-center w-full">
+          <TelegramLoginButton 
+            dataOnauth={handleTelegramResponse} 
+            botName={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "shoppingot_test_bot"} 
+            buttonSize="large" 
+            cornerRadius={12}
+            usePic={true}
+          />
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800"></div>

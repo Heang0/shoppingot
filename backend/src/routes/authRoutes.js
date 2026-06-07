@@ -1,5 +1,5 @@
 import express from 'express';
-import { authUser, registerUser } from '../controllers/authController.js';
+import { authUser, registerUser, telegramLogin } from '../controllers/authController.js';
 import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
@@ -12,5 +12,6 @@ const authLimiter = rateLimit({
 
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, authUser);
+router.post('/telegram', telegramLogin);
 
 export default router;

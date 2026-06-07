@@ -1,8 +1,8 @@
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
-import { Inter, Kantumruy_Pro } from "next/font/google";
+import { Outfit, Kantumruy_Pro } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"], display: 'swap' });
+const outfit = Outfit({ subsets: ["latin"], display: 'swap' });
 const kantumruy = Kantumruy_Pro({ 
   subsets: ["khmer"], 
   display: 'swap',
@@ -33,7 +33,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
  
   // Select the font based on the locale
-  const fontClass = locale === 'km' ? `${kantumruy.className} ${kantumruy.variable} lang-km` : `${inter.className} ${kantumruy.variable}`;
+  const fontClass = locale === 'km' ? `${kantumruy.className} ${kantumruy.variable} lang-km` : `${outfit.className} ${kantumruy.variable}`;
 
   return (
     <div className={fontClass}>

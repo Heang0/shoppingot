@@ -21,7 +21,7 @@ export default function OrderTracking() {
   const fetchOrders = async (page: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/orders/store?page=${page}&limit=10`, {
+      const res = await fetch(`http://localhost:5000/api/orders/store?page=${page}&limit=10`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -38,7 +38,7 @@ export default function OrderTracking() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/orders/${orderId}/status`, {
+      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

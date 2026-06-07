@@ -18,14 +18,16 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Default transformation for products (up to 800px)
-    let transformation = [{ width: 800, crop: 'limit' }, { quality: 'auto', fetch_format: 'auto' }];
+    // Default transformation for products (600px is the sweet spot for crisp e-commerce photos without wasting bandwidth)
+    let transformation = [{ width: 600, crop: 'limit' }, { quality: 'auto:good', fetch_format: 'webp' }];
     
     // Check type from query params
     if (req.query.type === 'profile' || req.query.type === 'storeLogo') {
-      transformation = [{ width: 400, crop: 'limit' }, { quality: 'auto', fetch_format: 'auto' }];
+      // Logos and Avatars are kept extremely small (200px) and highly compressed to save maximum bandwidth
+      transformation = [{ width: 200, crop: 'limit' }, { quality: 'auto:eco', fetch_format: 'webp' }];
     } else if (req.query.type === 'banner') {
-      transformation = [{ width: 1200, crop: 'limit' }, { quality: 'auto', fetch_format: 'webp' }];
+      // Banners are wide but highly compressed
+      transformation = [{ width: 800, crop: 'limit' }, { quality: 'auto:eco', fetch_format: 'webp' }];
     }
 
     return {

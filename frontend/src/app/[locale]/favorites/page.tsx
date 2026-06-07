@@ -42,7 +42,7 @@ export default function FavoritesPage() {
         }
 
         // Get all products
-        const response = await fetch('http://192.168.1.7:5000/api/products');
+        const response = await fetch('http://localhost:5000/api/products');
         if (!response.ok) throw new Error('Failed to fetch products');
         
         const allProducts = await response.json();

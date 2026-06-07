@@ -19,7 +19,7 @@ export default function CustomerOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/orders/customer', {
+      const res = await fetch('http://localhost:5000/api/orders/customer', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();

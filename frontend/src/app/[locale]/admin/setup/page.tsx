@@ -17,16 +17,18 @@ export default function StoreSetup() {
   const [category, setCategory] = useState('General Retail');
   const [message, setMessage] = useState('');
   const [existingStoreId, setExistingStoreId] = useState<string | null>(null);
+  const [storeData, setStoreData] = useState<any>(null);
 
   useEffect(() => {
     if (user?.token) {
-      fetch('http://192.168.1.7:5000/api/stores', {
+      fetch('http://localhost:5000/api/stores', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       .then(res => res.json())
       .then(data => {
         const myStore = data.find((s: any) => s.ownerId._id === user._id || s.ownerId === user._id);
         if (myStore) {
+          setStoreData(myStore);
           setExistingStoreId(myStore._id);
           setName(myStore.name);
           setSlug(myStore.slug);
@@ -50,7 +52,7 @@ export default function StoreSetup() {
 
       if (existingStoreId) {
         // Update existing store
-        const res = await fetch(`http://192.168.1.7:5000/api/stores/${existingStoreId}`, {
+        const res = await fetch(`http://localhost:5000/api/stores/${existingStoreId}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -61,7 +63,7 @@ export default function StoreSetup() {
         if (!res.ok) throw new Error((await res.json()).message);
       } else {
         // Create new store
-        const res = await fetch('http://192.168.1.7:5000/api/stores', {
+        const res = await fetch('http://localhost:5000/api/stores', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -77,7 +79,7 @@ export default function StoreSetup() {
 
       // Update Bakong Settings
       if (bakongId && storeId) {
-        await fetch(`http://192.168.1.7:5000/api/stores/${storeId}/payment-settings`, {
+        await fetch(`http://localhost:5000/api/stores/${storeId}/payment-settings`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -138,9 +140,25 @@ export default function StoreSetup() {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('payment_settings')}</h3>
           <div className="space-y-5">
+            {(!storeData || storeData?.plan?.planId?.name === 'Free') && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-800/50 flex items-start gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="font-semibold">Upgrade Required</p>
+                  <p className="mt-1">KHQR automatic payments are only available on Pro and Premium plans. Please upgrade to unlock.</p>
+                </div>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('bakong_id')}</label>
-              <input type="text" required value={bakongId} onChange={e => setBakongId(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" placeholder="example@bkrt" />
+              <input 
+                type="text" 
+                value={bakongId} 
+                onChange={e => setBakongId(e.target.value)} 
+                disabled={!storeData || storeData?.plan?.planId?.name === 'Free'}
+                className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                placeholder="example@bkrt" 
+              />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('bakong_warning')}</p>
             </div>
             <div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle, Monitor } from 'lucide-react';
+import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle, Monitor, Layers, Tags } from 'lucide-react';
 
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -45,9 +45,9 @@ export default function StoreAdminLayout({
 
   const sidebarItems = [
     { label: t('dashboard'), href: '/admin', icon: <LayoutDashboard size={20} /> },
-    { label: t('categories'), href: '/admin/categories', icon: <Package size={20} /> },
+    { label: t('categories'), href: '/admin/categories', icon: <Layers size={20} /> },
     { label: t('manage_products'), href: '/admin/products', icon: <Package size={20} /> },
-    { label: locale === 'km' ? 'ប្រូម៉ូសិន' : 'Promotions', href: '/admin/promotions', icon: <Package size={20} /> },
+    { label: locale === 'km' ? 'ប្រូម៉ូសិន' : 'Promotions', href: '/admin/promotions', icon: <Tags size={20} /> },
     { label: t('order_tracking'), href: '/admin/orders', icon: <ShoppingCart size={20} /> },
     { label: t('upgrade_plan'), href: '/admin/upgrade', icon: <ArrowUpCircle size={20} /> },
     { label: t('settings'), href: '/admin/settings', icon: <Settings size={20} /> },

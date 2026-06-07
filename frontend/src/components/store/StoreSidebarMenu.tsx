@@ -145,7 +145,7 @@ export default function StoreSidebarMenu({
                 <Link
                   href={categoriesHref}
                   onClick={onClose}
-                  className={`py-2.5 px-1 text-sm sm:text-base transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 ${pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+                  className={`py-2.5 px-1 text-sm sm:text-base font-semibold transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 ${pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                   style={pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') ? { color: primaryColor || '#000' } : undefined}
                 >
                   {locale === 'km' ? 'មើលទាំងអស់' : 'View All Categories'}
@@ -157,7 +157,7 @@ export default function StoreSidebarMenu({
                       key={cat._id}
                       href={appendParams(`/${locale}/category/${(cat as any).slug}`)}
                       onClick={onClose}
-                      className={`py-2.5 px-1 text-sm sm:text-base transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 break-words ${isCatActive ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+                      className={`py-2.5 px-1 text-sm sm:text-base font-semibold transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 break-words ${isCatActive ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                       style={isCatActive ? { color: primaryColor || '#000' } : undefined}
                     >
                       {locale === 'km' && (cat as any).nameKm ? (cat as any).nameKm : cat.name}

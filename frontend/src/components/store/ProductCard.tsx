@@ -100,10 +100,10 @@ export default function ProductCard({
       </div>
 
       <div className="flex flex-col flex-1">
-        <h3 className={`line-clamp-1 ${themeStyle === 'minimalist' ? 'text-sm font-medium text-gray-900 dark:text-white mb-0.5' : themeStyle === 'neo-brutalism' ? 'text-base font-black uppercase text-black dark:text-white mb-1' : 'text-[15px] font-semibold text-gray-900 dark:text-white mb-1 tracking-tight'}`}>
+        <h3 className={`line-clamp-2 ${themeStyle === 'minimalist' ? 'text-[15px] font-bold text-gray-900 dark:text-white mb-0.5' : themeStyle === 'neo-brutalism' ? 'text-base font-black uppercase text-black dark:text-white mb-1 leading-tight' : 'text-[15px] sm:text-base font-bold text-gray-900 dark:text-white mb-1 tracking-tight leading-snug'}`}>
           {params.locale === 'km' && product.titleKm ? product.titleKm : product.title}
         </h3>
-        <p className={`line-clamp-2 ${themeStyle === 'minimalist' ? 'text-xs text-gray-500' : 'text-xs text-gray-500 dark:text-gray-400'}`}>
+        <p className={`line-clamp-2 mt-0.5 ${themeStyle === 'minimalist' ? 'text-xs text-gray-500' : 'text-xs text-gray-500 dark:text-gray-400'}`}>
           {params.locale === 'km' && product.descriptionKm ? product.descriptionKm : product.description}
         </p>
         

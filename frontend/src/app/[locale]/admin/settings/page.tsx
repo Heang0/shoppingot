@@ -88,7 +88,7 @@ export default function AdminSettings() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const res = await fetch('http://192.168.1.7:5000/api/stores', {
+        const res = await fetch('http://localhost:5000/api/stores', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         const stores = await res.json();
@@ -110,7 +110,7 @@ export default function AdminSettings() {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const res = await fetch('http://192.168.1.7:5000/api/users/profile', {
+      const res = await fetch('http://localhost:5000/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export default function AdminSettings() {
     setLoading(true);
     setSuccessMsg('');
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
+      const res = await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ export default function AdminSettings() {
       });
       if (res.ok) {
         // Also update payment settings
-        await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}/payment-settings`, {
+        await fetch(`http://localhost:5000/api/stores/${storeData._id}/payment-settings`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export default function AdminSettings() {
     uploadData.append('image', file);
 
     try {
-      const res = await fetch(`http://192.168.1.7:5000/api/upload?type=${type}`, {
+      const res = await fetch(`http://localhost:5000/api/upload?type=${type}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user?.token}` },
         body: uploadData
@@ -209,7 +209,7 @@ export default function AdminSettings() {
           setStoreData({ ...storeData, branding: newBranding });
           setLogoUploaded(true);
           // Auto-save to DB immediately so it persists on refresh
-          await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
+          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
             body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })
@@ -221,7 +221,7 @@ export default function AdminSettings() {
           const newBranding = { ...storeData.branding, bannerUrl: data.url };
           setStoreData({ ...storeData, branding: newBranding });
           // Auto-save to DB immediately so it persists on refresh
-          await fetch(`http://192.168.1.7:5000/api/stores/${storeData._id}`, {
+          await fetch(`http://localhost:5000/api/stores/${storeData._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` },
             body: JSON.stringify({ name: storeData.name, slug: storeData.slug, category: storeData.category, branding: newBranding })

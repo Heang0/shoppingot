@@ -44,7 +44,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
     setMounted(true);
     const loadCategories = async () => {
       try {
-        const storeRes = await fetch(`http://192.168.1.7:5000/api/stores/${slug}`);
+        const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
         if (!storeRes.ok) return;
         const store = await storeRes.json();
         
@@ -52,7 +52,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
         if (store.branding?.logoUrl) setLogoUrl(store.branding.logoUrl);
 
-        const catRes = await fetch(`http://192.168.1.7:5000/api/categories/store/${store._id}`);
+        const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
           const cats = await catRes.json();
           setCategories(cats || []);
@@ -231,7 +231,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
                       <Link
                         key={cat._id}
                         href={appendParams(`/${locale}/category/${cat.slug}`)}
-                        className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                        className={`px-4 py-2.5 text-sm font-semibold transition-colors ${
                           isCatActive ? 'bg-gray-50 dark:bg-gray-800/50' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                         }`}
                         style={isCatActive ? { color: primaryColor || '#000' } : undefined}
