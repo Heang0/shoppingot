@@ -74,12 +74,15 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
     return `${url.pathname}${url.search}`;
   };
 
-  const homeHref = appendParams(`/${locale}`);
-  const profileHref = appendParams(`/${locale}/profile`);
-  const favoritesHref = appendParams(`/${locale}/favorites`);
-  // isHome: either the root or /km (locale only)
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting ? `/${locale}/store/${slug}` : `/${locale}`;
+
+  const homeHref = appendParams(basePath);
+  const profileHref = appendParams(`${basePath}/profile`);
+  const favoritesHref = appendParams(`${basePath}/favorites`);
+  // isHome: either the root, /km, or the store path
   const isCategoryPage = pathname?.includes('/category/');
-  const isHome = (pathname === `/${locale}` || pathname === '/' || pathname === `/${locale}/`) && !isCategoryPage;
+  const isHome = (pathname === `/${locale}` || pathname === '/' || pathname === `/${locale}/` || pathname === basePath || pathname === `${basePath}/`) && !isCategoryPage;
 
   // Language toggle — swap locale prefix
   const langHref = (() => {
@@ -188,7 +191,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
             {locale === 'km' ? 'ទំព័រដើម' : 'Home'}
           </Link>
           <Link
-            href={appendParams(`/${locale}/products`)}
+            href={appendParams(`${basePath}/products`)}
             className={`text-sm font-semibold uppercase tracking-wider transition-colors ${
               pathname?.endsWith('/products') || pathname?.endsWith('/products/') || pathname?.includes('/product/') ? '' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
@@ -197,7 +200,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
             {locale === 'km' ? 'ផលិតផល' : 'Products'}
           </Link>
           <Link
-            href={appendParams(`/${locale}/promotions`)}
+            href={appendParams(`${basePath}/promotions`)}
             className={`text-sm font-semibold uppercase tracking-wider transition-colors ${
               pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/') ? '' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
@@ -209,7 +212,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
           {/* Categories Dropdown */}
           <div className="relative group">
             <Link
-              href={appendParams(`/${locale}/categories`)}
+              href={appendParams(`${basePath}/categories`)}
               className={`flex items-center gap-1 text-sm font-semibold uppercase tracking-wider transition-colors py-2 ${
                 pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') || pathname?.includes('/category/') 
                 ? '' 
@@ -230,7 +233,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
                     return (
                       <Link
                         key={cat._id}
-                        href={appendParams(`/${locale}/category/${cat.slug}`)}
+                        href={appendParams(`${basePath}/category/${cat.slug}`)}
                         className={`px-4 py-2.5 text-sm font-semibold transition-colors ${
                           isCatActive ? 'bg-gray-50 dark:bg-gray-800/50' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                         }`}

@@ -48,10 +48,13 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
     return `${url.pathname}${url.search}`;
   };
 
-  const homeHref = appendParams(`/${locale}`);
-  const productsHref = appendParams(`/${locale}/products`);
-  const promotionsHref = appendParams(`/${locale}/promotions`);
-  const profileHref = appendParams(`/${locale}/profile`);
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting ? `/${locale}/store/${slug}` : `/${locale}`;
+
+  const homeHref = appendParams(basePath);
+  const productsHref = appendParams(`${basePath}/products`);
+  const promotionsHref = appendParams(`${basePath}/promotions`);
+  const profileHref = appendParams(`${basePath}/profile`);
 
   const t = (en: string, km: string) => locale === 'km' ? km : en;
 
@@ -60,7 +63,7 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
       label: t('Home', 'ទំព័រដើម'),
       href: homeHref,
       icon: Home,
-      isActive: pathname === `/${locale}` || pathname === `/${locale}/` || pathname === '/',
+      isActive: pathname === `/${locale}` || pathname === `/${locale}/` || pathname === '/' || pathname === basePath || pathname === `${basePath}/`,
     },
     {
       label: t('Products', 'ផលិតផល'),

@@ -55,10 +55,13 @@ export default function StoreSidebarMenu({
   };
 
   // Clean paths — preserve preview parameters
-  const homeHref = appendParams(`/${locale}`);
-  const cartHref = appendParams(`/${locale}/cart`);
-  const profileHref = appendParams(`/${locale}/profile`);
-  const favoritesHref = appendParams(`/${locale}/favorites`);
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting ? `/${locale}/store/${slug}` : `/${locale}`;
+
+  const homeHref = appendParams(basePath);
+  const cartHref = appendParams(`${basePath}/cart`);
+  const profileHref = appendParams(`${basePath}/profile`);
+  const favoritesHref = appendParams(`${basePath}/favorites`);
   const categoryTitle = locale === 'km' ? 'ប្រភេទតាមប្រភេទ' : 'Categories By Type';
   const homeLabel = locale === 'km' ? 'ទំព័រដើម' : 'Home';
   const productsLabel = locale === 'km' ? 'ផលិតផល' : 'Products';
@@ -67,10 +70,6 @@ export default function StoreSidebarMenu({
   const cartLabel = locale === 'km' ? 'កន្ត្រក' : 'Cart';
   const accountLabel = locale === 'km' ? 'គណនី' : 'Account';
   const favoritesLabel = locale === 'km' ? 'ចំណូលចិត្ត' : 'Favorites';
-  
-  const productsHref = appendParams(`/${locale}/products`);
-  const promotionsHref = appendParams(`/${locale}/promotions`);
-  const categoriesHref = appendParams(`/${locale}/categories`);
   
   const favorites = useFavoritesStore(state => state.favorites);
   const totalFavorites = favorites.length;
@@ -124,10 +123,10 @@ export default function StoreSidebarMenu({
           <Link href={homeHref} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname === `/${locale}` || pathname === '/' ? '' : 'text-gray-900 dark:text-white'}`} style={pathname === `/${locale}` || pathname === '/' ? { color: primaryColor || '#000' } : undefined}>
             {homeLabel}
           </Link>
-          <Link href={productsHref} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/products') || pathname?.endsWith('/products/') || pathname?.includes('/product/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/products') || pathname?.endsWith('/products/') || pathname?.includes('/product/') ? { color: primaryColor || '#000' } : undefined}>
+          <Link href={appendParams(`${basePath}/products`)} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/products') || pathname?.endsWith('/products/') || pathname?.includes('/product/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/products') || pathname?.endsWith('/products/') || pathname?.includes('/product/') ? { color: primaryColor || '#000' } : undefined}>
             {productsLabel}
           </Link>
-          <Link href={promotionsHref} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/') ? { color: primaryColor || '#000' } : undefined}>
+          <Link href={appendParams(`${basePath}/promotions`)} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/promotions') || pathname?.endsWith('/promotions/') ? { color: primaryColor || '#000' } : undefined}>
             {promotionsLabel}
           </Link>
           {categories.length > 0 ? (
@@ -143,7 +142,7 @@ export default function StoreSidebarMenu({
               
               <div className={`flex flex-col pl-4 overflow-hidden transition-all duration-300 ${isCategoriesOpen ? 'max-h-[500px] mb-2 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <Link
-                  href={categoriesHref}
+                  href={appendParams(`${basePath}/categories`)}
                   onClick={onClose}
                   className={`py-2.5 px-1 text-sm sm:text-base font-semibold transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 ${pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                   style={pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') ? { color: primaryColor || '#000' } : undefined}
@@ -151,11 +150,11 @@ export default function StoreSidebarMenu({
                   {locale === 'km' ? 'មើលទាំងអស់' : 'View All Categories'}
                 </Link>
                 {categories.map(cat => {
-                  const isCatActive = pathname?.includes(`/category/${(cat as any).slug}`);
+                  const isCatActive = pathname?.includes(`/category/${cat.slug}`);
                   return (
                     <Link
                       key={cat._id}
-                      href={appendParams(`/${locale}/category/${(cat as any).slug}`)}
+                      href={appendParams(`${basePath}/category/${cat.slug}`)}
                       onClick={onClose}
                       className={`py-2.5 px-1 text-sm sm:text-base font-semibold transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 break-words ${isCatActive ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                       style={isCatActive ? { color: primaryColor || '#000' } : undefined}
@@ -167,7 +166,7 @@ export default function StoreSidebarMenu({
               </div>
             </div>
           ) : (
-            <Link href={categoriesHref} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') || pathname?.includes('/category/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') || pathname?.includes('/category/') ? { color: primaryColor || '#000' } : undefined}>
+            <Link href={appendParams(`${basePath}/categories`)} onClick={onClose} className={`py-3 sm:py-4 text-lg sm:text-xl ${themeStyle === 'neo-brutalism' ? 'font-bold uppercase tracking-widest' : 'font-medium'} hover:opacity-50 transition-opacity border-b border-gray-50 dark:border-gray-900 ${pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') || pathname?.includes('/category/') ? '' : 'text-gray-900 dark:text-white'}`} style={pathname?.endsWith('/categories') || pathname?.endsWith('/categories/') || pathname?.includes('/category/') ? { color: primaryColor || '#000' } : undefined}>
               {allCategoriesLabel}
             </Link>
           )}
