@@ -44,7 +44,7 @@ app.use(cors({
     
     // Allow localhost, local network testing, and Vercel domains
     if (
-      origin.match(/^http:\/\/(?:[a-zA-Z0-9-]+\.)?(localhost|192\.168\.1\.7|192\.168\.1\.7\.nip\.io):3000$/) ||
+      origin.match(/^http:\/\/(?:[a-zA-Z0-9-]+\.)?(localhost|192\.168\.1\.7|192\.168\.1\.7\.nip\.io)(:\d+)?$/) ||
       origin.endsWith('.vercel.app') ||
       origin === 'https://shoppingot.vercel.app'
     ) {
