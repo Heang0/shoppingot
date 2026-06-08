@@ -7,6 +7,7 @@ import {
   updateOrderStatus,
   simulateOrderPayment,
   getStoreAnalytics,
+  getOrderById,
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -18,6 +19,7 @@ router.post('/:id/simulate-pay', simulateOrderPayment);
 router.post('/:id/verify', verifyOrderPayment);
 router.get('/store', protect, getOrdersForStore);
 router.get('/customer', protect, getCustomerOrders);
+router.get('/:id', getOrderById); // Public Order Fetch (for Tracking page)
 router.put('/:id/status', protect, updateOrderStatus);
 
 export default router;

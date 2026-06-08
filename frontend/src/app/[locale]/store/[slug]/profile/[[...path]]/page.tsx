@@ -8,7 +8,8 @@ import StoreEditProfileModal from '@/components/store/StoreEditProfileModal';
 import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, Package, Clock, CheckCircle2, Truck, XCircle, AlertCircle, Camera, Edit2, Hash, Link2, Activity, CreditCard, Tag, Percent, MapPin, Calendar, FileText, RefreshCcw } from 'lucide-react';
+import { LogOut, Package, Clock, CheckCircle2, Truck, XCircle, AlertCircle, Camera, Edit2, Hash, Link2, Activity, CreditCard, Tag, Percent, MapPin, Calendar, FileText, RefreshCcw, X, Plus, Star, Heart } from 'lucide-react';
+import Select from 'react-select';
 
 export default function StoreProfilePage({ params }: { params: { slug: string, locale: string, path?: string[] } }) {
   const user = useCustomerAuthStore((state) => state.customerInfo);
@@ -41,26 +42,30 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Tabs State
-  const [activeTab, setActiveTab] = useState<'orders' | 'address'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'address' | 'favorites'>('orders');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showPayModal, setShowPayModal] = useState(false);
 
-  // Address Form State
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState('');
-  const [saveError, setSaveError] = useState('');
+  // Address Book State
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
-  // Sync state if user changes
+  // Geo Data & Modal Form State
+  const [geoData, setGeoData] = useState<any[]>([]);
+  const [tempName, setTempName] = useState('');
+  const [tempPhone, setTempPhone] = useState('');
+  const [tempProvince, setTempProvince] = useState<any>(null);
+  const [tempDistrict, setTempDistrict] = useState<any>(null);
+  const [tempCommune, setTempCommune] = useState<any>(null);
+  const [tempStreet, setTempStreet] = useState('');
+
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setPhone(user.phone || '');
-      setAddress(user.address || '');
-    }
-  }, [user]);
+    fetch('/data/cambodia_geo.json')
+      .then(res => res.json())
+      .then(data => setGeoData(data))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     const fetchStoreAndOrders = async () => {
@@ -164,40 +169,112 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
     }
   };
 
-  const handleSaveAddress = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setIsSaving(true);
-    setSaveError('');
-    setSaveSuccess('');
-
+  const handleDeleteAddress = async (id: string) => {
+    if (!confirm(params.locale === 'km' ? 'តើអ្នកពិតជាចង់លុបអាសយដ្ឋាននេះមែនទេ?' : 'Are you sure you want to delete this address?')) return;
     try {
-      const profileRes = await fetch('http://localhost:5000/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`
-        },
-        body: JSON.stringify({ name, phone, address })
+      const res = await fetch(`http://localhost:5000/api/users/addresses/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${user?.token}` }
       });
-
-      const profileData = await profileRes.json();
-      if (!profileRes.ok) throw new Error(profileData.message || 'Profile update failed');
-
-      setCustomerInfo({
-        ...user,
-        name: profileData.name,
-        phone: profileData.phone,
-        address: profileData.address
-      });
-      setSaveSuccess(params.locale === 'km' ? 'បានរក្សាទុកដោយជោគជ័យ!' : 'Saved successfully!');
-      setTimeout(() => setSaveSuccess(''), 3000);
-    } catch (err: any) {
+      if (!res.ok) throw new Error('Failed to delete');
+      const updatedAddresses = await res.json();
+      setCustomerInfo({ ...user!, addresses: updatedAddresses });
+    } catch (err) {
       console.error(err);
-      setSaveError(err.message || (params.locale === 'km' ? 'បរាជ័យក្នុងការរក្សាទុក' : 'Failed to save'));
-    } finally {
-      setIsSaving(false);
+      alert('Failed to delete address');
     }
+  };
+
+  const handleSetDefaultAddress = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/addresses/${id}/default`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      if (!res.ok) throw new Error('Failed to set default');
+      const updatedAddresses = await res.json();
+      setCustomerInfo({ ...user!, addresses: updatedAddresses });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to set default address');
+    }
+  };
+
+  const handleSaveModalAddress = async () => {
+    if (!tempName || !tempPhone || !tempProvince || !tempDistrict || !tempCommune || !tempStreet) {
+      alert(params.locale === 'km' ? 'សូមបំពេញព័ត៌មានឲ្យបានគ្រប់គ្រាន់' : 'Please fill all required fields');
+      return;
+    }
+    setIsSavingAddress(true);
+    
+    const addressString = `${tempStreet}, ${tempCommune.label}, ${tempDistrict.label}, ${tempProvince.label}`;
+    
+    try {
+      const endpoint = editingAddressId 
+        ? `http://localhost:5000/api/users/addresses/${editingAddressId}`
+        : 'http://localhost:5000/api/users/addresses';
+        
+      const method = editingAddressId ? 'PUT' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}` 
+        },
+        body: JSON.stringify({
+          recipientName: tempName,
+          phoneNumber: tempPhone,
+          addressString
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to save address');
+      const updatedAddresses = await res.json();
+      
+      setCustomerInfo({ ...user!, addresses: updatedAddresses });
+      setIsAddressModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save address');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
+  const handleEditAddress = (addr: any) => {
+    setEditingAddressId(addr._id);
+    setTempName(addr.recipientName || '');
+    setTempPhone(addr.phoneNumber || '');
+    
+    // Attempt to reverse-map the addressString
+    // Format: Street, Commune, District, Province
+    if (addr.addressString) {
+      const parts = addr.addressString.split(',').map((p: string) => p.trim());
+      if (parts.length >= 4) {
+        setTempStreet(parts.slice(0, parts.length - 3).join(', '));
+        const cLabel = parts[parts.length - 3];
+        const dLabel = parts[parts.length - 2];
+        const pLabel = parts[parts.length - 1];
+        
+        const pMatch = geoData.find(p => (params.locale === 'km' ? p.name_km : p.name_en) === pLabel);
+        if (pMatch) {
+          setTempProvince({ value: pMatch.code, label: pLabel });
+          const dMatch = pMatch.districts?.find((d: any) => (params.locale === 'km' ? d.name_km : d.name_en) === dLabel);
+          if (dMatch) {
+            setTempDistrict({ value: dMatch.code, label: dLabel });
+            const cMatch = dMatch.communes?.find((c: any) => (params.locale === 'km' ? c.name_km : c.name_en) === cLabel);
+            if (cMatch) {
+              setTempCommune({ value: cMatch.code, label: cLabel });
+            }
+          }
+        }
+      } else {
+        setTempStreet(addr.addressString);
+      }
+    }
+    
+    setIsAddressModalOpen(true);
   };
 
   const getStatusIcon = (status: string) => {
@@ -328,6 +405,15 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
             }`}
         >
           {params.locale === 'km' ? 'អាសយដ្ឋាន' : 'Address'}
+        </button>
+        <button
+          onClick={() => setActiveTab('favorites')}
+          className={`pb-3 font-bold text-lg transition-colors border-b-2 ${activeTab === 'favorites'
+              ? 'border-black dark:border-white text-black dark:text-white'
+              : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'
+            }`}
+        >
+          {params.locale === 'km' ? 'សំណព្វ' : 'Favorites'}
         </button>
       </div>
 
@@ -651,82 +737,158 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
             )
           )}
         </div>
-      ) : (
-        <div className={`max-w-2xl ${themeStyle === 'neo-brutalism'
-            ? 'bg-white dark:bg-[#111111] border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] p-6 md:p-8'
-            : 'bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-900 p-6 md:p-8 shadow-sm'
-          }`}>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
-            {params.locale === 'km' ? 'ព័ត៌មានទំនាក់ទំនងភ្ញៀវ / Shipping Address' : 'Shipping Address'}
-          </h2>
-
-          <form onSubmit={handleSaveAddress} className="space-y-5">
-            {saveSuccess && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium border border-green-200 dark:border-green-800/30 flex items-center gap-2">
-                <CheckCircle2 size={18} /> {saveSuccess}
-              </div>
-            )}
-            {saveError && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium border border-red-200 dark:border-red-800/30 flex items-center gap-2">
-                <AlertCircle size={18} /> {saveError}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-2">
-                {params.locale === 'km' ? 'ឈ្មោះពេញ / Full Name' : 'Full Name'}
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-2">
-                {params.locale === 'km' ? 'លេខទូរស័ព្ទ / Phone Number' : 'Phone Number'}
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-2">
-                {params.locale === 'km' ? 'អាសយដ្ឋានដឹកជញ្ជូន / Address' : 'Address'}
-              </label>
-              <textarea
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-black dark:focus:border-white transition-colors resize-none"
-                rows={4}
-                required
-              />
-            </div>
-
+      ) : activeTab === 'address' ? (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-snug">
+              {params.locale === 'km' ? 'អាសយដ្ឋាន / Address' : 'Address'}
+            </h2>
             <button
-              type="submit"
-              disabled={isSaving}
-              className={`w-full py-3.5 px-4 font-bold text-center transition-all mt-4 ${themeStyle === 'neo-brutalism'
-                  ? 'border-[2px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] text-black bg-[#f0f0f0]'
-                  : 'rounded-xl text-white hover:opacity-90 active:scale-[0.98]'
+              onClick={() => {
+                setEditingAddressId(null);
+                setTempName(user?.name || '');
+                setTempPhone(user?.phone || '');
+                setTempProvince(null);
+                setTempDistrict(null);
+                setTempCommune(null);
+                setTempStreet('');
+                setIsAddressModalOpen(true);
+              }}
+              className={`flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-bold transition-all ${themeStyle === 'neo-brutalism'
+                  ? 'border-[2px] border-black dark:border-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black bg-white'
+                  : 'rounded-xl text-white shadow-md hover:scale-[1.02] active:scale-[0.98]'
                 }`}
               style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
             >
-              {isSaving ? (params.locale === 'km' ? 'កំពុងរក្សាទុក...' : 'Saving...') : (params.locale === 'km' ? 'រក្សាទុកអាសយដ្ឋាន' : 'Save Address')}
+              <Plus size={16} />
+              {params.locale === 'km' ? 'បន្ថែមអាសយដ្ឋាន' : 'Add Address'}
             </button>
-          </form>
-        </div>
-      )}
+          </div>
 
-      <StoreEditProfileModal
+          <div className="grid gap-4 sm:grid-cols-2">
+            {user?.addresses && user.addresses.length > 0 ? user.addresses.map((addr: any) => (
+              <div key={addr._id} className={`p-5 relative ${themeStyle === 'neo-brutalism'
+                  ? `border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white dark:bg-[#111111] ${addr.isDefault ? 'border-blue-500 shadow-[4px_4px_0px_0px_rgba(59,130,246,1)]' : ''}`
+                  : `rounded-2xl border ${addr.isDefault ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900'}`
+                }`}>
+                
+                {addr.isDefault && (
+                  <div className="absolute top-4 right-4 text-blue-500">
+                    <Star size={20} fill="currentColor" />
+                  </div>
+                )}
+
+                <p className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  {addr.recipientName}
+                  {addr.isDefault && <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Default</span>}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-mono mt-1">{addr.phoneNumber}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 leading-relaxed">{addr.addressString}</p>
+
+                <div className="flex gap-4 mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <button 
+                    onClick={() => handleEditAddress(addr)} 
+                    className="text-gray-500 text-sm font-bold hover:underline transition-all"
+                  >
+                    {params.locale === 'km' ? 'កែប្រែ' : 'Edit'}
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteAddress(addr._id)} 
+                    className="text-red-500 text-sm font-bold hover:underline transition-all"
+                  >
+                    {params.locale === 'km' ? 'លុប' : 'Delete'}
+                  </button>
+                  {!addr.isDefault && (
+                    <button 
+                      onClick={() => handleSetDefaultAddress(addr._id)} 
+                      className="text-blue-600 dark:text-blue-400 text-sm font-bold hover:underline transition-all"
+                    >
+                      {params.locale === 'km' ? 'កំណត់ជាលំនាំដើម' : 'Set as Default'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )) : (
+              <div className="col-span-2 text-center py-10 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <MapPin className="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">
+                  {params.locale === 'km' ? 'អ្នកមិនទាន់មានអាសយដ្ឋានណាមួយនៅឡើយទេ។' : 'You do not have any saved addresses yet.'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : activeTab === 'favorites' ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-snug">
+              {params.locale === 'km' ? 'សំណព្វ / Favorites' : 'Favorites'}
+            </h2>
+          </div>
+
+          {!user?.favorites || user.favorites.length === 0 ? (
+            <div className={`text-center py-16 ${themeStyle === 'neo-brutalism'
+                ? 'bg-white dark:bg-[#111111] border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)]'
+                : 'bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-900'
+              }`}>
+              <Heart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{params.locale === 'km' ? 'មិនមានសំណព្វនៅឡើយទេ' : 'No Favorites Yet'}</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">{params.locale === 'km' ? 'អ្នកមិនទាន់បានរក្សាទុកផលិតផលណាមួយជាសំណព្វទេ' : "You haven't saved any products to your favorites yet."}</p>
+              <Link
+                href={`/${params.locale}/store/${params.slug}`}
+                className={`inline-block font-bold px-8 py-3 transition-all ${themeStyle === 'neo-brutalism'
+                    ? 'border-[2px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black bg-white dark:bg-black dark:text-white'
+                    : 'text-white rounded-full hover:scale-105 shadow-md'
+                  }`}
+                style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+              >
+                {params.locale === 'km' ? 'ស្វែងរកផលិតផល' : 'Browse Products'}
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {user.favorites.map((product: any) => {
+                // Determine if the product belongs to the current store
+                const isCurrentStore = typeof product.storeId === 'object' 
+                  ? product.storeId.slug === params.slug 
+                  : product.storeId === storeId;
+
+                const storeSlug = typeof product.storeId === 'object' ? product.storeId.slug : params.slug;
+
+                return (
+                  <div key={product._id} className="relative group">
+                    <Link href={isCurrentStore ? `/${params.locale}/product/${product.slug || product._id}` : `/${params.locale}/store/${storeSlug}/product/${product.slug || product._id}`} className={`block bg-white dark:bg-[#161616] rounded-2xl overflow-hidden transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md hover:-translate-y-1'}`}>
+                      <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
+                        {product.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Package className="w-8 h-8" />
+                          </div>
+                        )}
+                        {!isCurrentStore && (
+                          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded">
+                            {typeof product.storeId === 'object' ? product.storeId.name : 'Other Store'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base line-clamp-1 mb-1">
+                          {product.title}
+                        </h3>
+                        <p className="font-bold text-gray-900 dark:text-white text-sm" style={{ color: isCurrentStore ? primaryColor : undefined }}>
+                          ${product.price?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}      <StoreEditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         primaryColor={primaryColor}
@@ -734,16 +896,137 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
         isKm={params.locale === 'km'}
       />
 
-      {showPayModal && selectedOrder && selectedOrder.qrString && (
-        <BakongKHQRModal
-          qrString={selectedOrder.qrString}
-          amount={selectedOrder.totalAmount}
-          currency="USD"
-          merchantName="ShoppingOT Merchant"
-          isPaid={selectedOrder.paymentStatus === 'PAID'}
-          locale={params.locale}
-          onClose={() => setShowPayModal(false)}
-        />
+      {isAddressModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className={`w-full max-w-lg bg-white dark:bg-[#111111] my-8 ${themeStyle === 'neo-brutalism'
+              ? 'border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]'
+              : 'rounded-3xl shadow-xl'
+            } overflow-visible relative`}>
+
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {params.locale === 'km' ? 'អាសយដ្ឋានដឹកជញ្ជូន / Shipping Address' : 'Shipping Address'}
+              </h2>
+              <button
+                onClick={() => setIsAddressModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'ឈ្មោះពេញ / Full Name' : 'Full Name'}</label>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={e => setTempName(e.target.value)}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border focus:outline-none transition-colors ${themeStyle === 'neo-brutalism'
+                      ? 'border-2 border-black dark:border-white rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] focus:shadow-none focus:translate-x-[4px] focus:translate-y-[4px]'
+                      : 'rounded-xl border-gray-200 dark:border-gray-800 focus:border-gray-400'
+                    }`}
+                  placeholder={params.locale === 'km' ? 'បញ្ចូលឈ្មោះរបស់អ្នក' : 'Enter your name'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'លេខទូរស័ព្ទ / Phone Number' : 'Phone Number'}</label>
+                <input
+                  type="tel"
+                  value={tempPhone}
+                  onChange={e => setTempPhone(e.target.value)}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border focus:outline-none transition-colors ${themeStyle === 'neo-brutalism'
+                      ? 'border-2 border-black dark:border-white rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] focus:shadow-none focus:translate-x-[4px] focus:translate-y-[4px]'
+                      : 'rounded-xl border-gray-200 dark:border-gray-800 focus:border-gray-400'
+                    }`}
+                  placeholder="012 345 678"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'ខេត្ត ក្រុង / Province' : 'Province'}</label>
+                <Select
+                  options={geoData.map(p => ({ value: p.code, label: params.locale === 'km' ? p.name_km : p.name_en }))}
+                  value={tempProvince}
+                  onChange={(val) => {
+                    setTempProvince(val);
+                    setTempDistrict(null);
+                    setTempCommune(null);
+                  }}
+                  placeholder={params.locale === 'km' ? 'ជ្រើសរើសខេត្ត ក្រុង' : 'Select Province'}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                  styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                />
+              </div>
+
+              {tempProvince && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'ស្រុក ខណ្ឌ / District' : 'District'}</label>
+                  <Select
+                    options={geoData.find(p => p.code === tempProvince.value)?.districts.map((d: any) => ({ value: d.code, label: params.locale === 'km' ? d.name_km : d.name_en })) || []}
+                    value={tempDistrict}
+                    onChange={(val) => {
+                      setTempDistrict(val);
+                      setTempCommune(null);
+                    }}
+                    placeholder={params.locale === 'km' ? 'ជ្រើសរើសស្រុក ខណ្ឌ' : 'Select District'}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                  />
+                </div>
+              )}
+
+              {tempDistrict && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'ឃុំ សង្កាត់ / Commune' : 'Commune'}</label>
+                  <Select
+                    options={geoData.find(p => p.code === tempProvince.value)?.districts.find((d: any) => d.code === tempDistrict.value)?.communes.map((c: any) => ({ value: c.code, label: params.locale === 'km' ? c.name_km : c.name_en })) || []}
+                    value={tempCommune}
+                    onChange={setTempCommune}
+                    placeholder={params.locale === 'km' ? 'ជ្រើសរើសឃុំ សង្កាត់' : 'Select Commune'}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                  />
+                </div>
+              )}
+
+              {tempCommune && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{params.locale === 'km' ? 'លេខផ្ទះ ផ្លូវ / House No, Street' : 'House No, Street'}</label>
+                  <input
+                    type="text"
+                    value={tempStreet}
+                    onChange={e => setTempStreet(e.target.value)}
+                    placeholder={params.locale === 'km' ? 'ឧ. ផ្ទះលេខ 12, ផ្លូវ 123' : 'Ex. House 12, Street 123'}
+                    className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border focus:outline-none transition-colors ${themeStyle === 'neo-brutalism'
+                        ? 'border-2 border-black dark:border-white rounded-none shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] focus:shadow-none focus:translate-x-[4px] focus:translate-y-[4px]'
+                        : 'rounded-xl border-gray-200 dark:border-gray-800 focus:border-gray-400'
+                      }`}
+                  />
+                </div>
+              )}
+
+              <button
+                onClick={handleSaveModalAddress}
+                disabled={isSavingAddress || !tempName || !tempPhone || !tempProvince || !tempDistrict || !tempCommune || !tempStreet}
+                className={`w-full py-3.5 px-4 font-bold text-center transition-all mt-4 ${themeStyle === 'neo-brutalism'
+                    ? 'border-[2px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] text-black bg-[#f0f0f0]'
+                    : 'rounded-xl text-white hover:opacity-90 active:scale-[0.98]'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                style={themeStyle !== 'neo-brutalism' ? { backgroundColor: primaryColor || '#000' } : undefined}
+              >
+                {isSavingAddress ? (params.locale === 'km' ? 'កំពុងរក្សាទុក...' : 'Saving...') : (params.locale === 'km' ? 'បញ្ជាក់អាសយដ្ឋាន' : 'Confirm Address')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -37,6 +37,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    addresses: [{
+      recipientName: String,
+      phoneNumber: String,
+      addressString: String, // The combined "Street, Commune, District, Province"
+      isDefault: {
+        type: Boolean,
+        default: false
+      }
+    }],
+    favorites: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product'
+    }],
   },
   {
     timestamps: true,

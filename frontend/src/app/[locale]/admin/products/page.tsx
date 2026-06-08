@@ -418,6 +418,7 @@ export default function ManageProducts() {
           <thead className="bg-gray-50 dark:bg-gray-900/50">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('product')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('custom_category')}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('price')}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('stock')}</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{locale === 'km' ? 'លក់ដាច់បំផុត' : 'Best Seller'}</th>
@@ -425,7 +426,9 @@ export default function ManageProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-            {products.map((product) => (
+            {products.map((product) => {
+              const productCategoryObj = categories.find(c => c._id === (typeof product.category === 'object' ? product.category?._id : product.category));
+              return (
               <tr key={product._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -439,6 +442,15 @@ export default function ManageProducts() {
                       </div>
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {productCategoryObj ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                      {getCategoryName(productCategoryObj)}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 italic text-xs">{t('no_category')}</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 font-medium">${product.price.toFixed(2)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
@@ -465,7 +477,8 @@ export default function ManageProducts() {
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+            })}
             {products.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">

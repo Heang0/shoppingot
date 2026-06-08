@@ -8,6 +8,7 @@ import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
 interface Plan {
   _id: string;
   name: string;
+  nameKm?: string;
   price: number;
 }
 
@@ -437,10 +438,11 @@ export default function UpgradePlan() {
       {qrData && selectedPlanId && (
         <BakongKHQRModal
           qrString={qrData.qrString}
-          amount={plans.find(p => p._id === selectedPlanId)?.price || 0}
+          amount={getDisplayPrice(plans.find(p => p._id === selectedPlanId))}
           currency="USD"
           merchantName="ShoppingOT Superadmin"
           isPaid={paymentStatus === 'PAID'}
+          locale={locale}
           onClose={() => { setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); }}
           onSuccessClose={() => { setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); window.location.reload(); }}
           onSimulatePay={handleSimulatePay}

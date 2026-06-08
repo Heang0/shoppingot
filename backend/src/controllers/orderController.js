@@ -150,30 +150,58 @@ const verifyOrderPayment = async (req, res) => {
 
       // Deduct stock when paid
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
+        const updatedProduct = await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } }, { new: true });
+        
+        // LOW STOCK ALERT
+        if (updatedProduct && updatedProduct.stock <= 5) {
+          try {
+            const store = await Store.findById(order.storeId);
+            if (store && store.telegramGroupId && process.env.TELEGRAM_BOT_TOKEN) {
+              const { sendTelegramNotification } = await import('../services/telegramBot.js');
+              const alertMsg = `⚠️ *Low Stock Alert!*\n\nProduct: *${updatedProduct.title}*\nCurrent Stock: *${updatedProduct.stock}* left!\n\nPlease restock soon to avoid running out.`;
+              await sendTelegramNotification(store.telegramGroupId, alertMsg);
+            }
+          } catch (err) {
+            console.error('Failed to send low stock alert', err);
+          }
+        }
       }
 
       // [PHASE 3] Dispatch Telegram Notification to Merchant Group
       try {
+        const populatedOrder = await Order.findById(order._id).populate('items.productId', 'title');
         const store = await Store.findById(order.storeId);
         const telegramChatId = store?.telegramGroupId;
-        
+        if (telegramChatId && process.env.TELEGRAM_BOT_TOKEN) {
           let itemsList = '';
-          order.items.forEach(item => {
-            itemsList += `- ${item.quantity}x ${item.productId ? 'Product' : 'Item'}\n`;
+          populatedOrder.items.forEach(item => {
+            const productName = item.productId?.title || 'Product';
+            itemsList += `- ${item.quantity}x ${productName}\n`;
           });
-          
-          const customerName = order.isGuest ? order.guestInfo?.name : order.customerId?.name || 'Unknown';
-          const customerPhone = order.isGuest ? order.guestInfo?.phone : 'No Phone';
-          const address = order.isGuest ? order.guestInfo?.address : 'No Address';
+
+          // guestInfo is always populated (even for logged-in users) from the checkout form
+          const customerName = order.guestInfo?.name || 'Unknown';
+          const customerPhone = order.guestInfo?.phone || 'No Phone';
+          const address = order.guestInfo?.address || 'No Address';
+
+          // Short ID to match what admin dashboard displays
+          const shortId = order._id.toString().substring(0, 10).toUpperCase();
+
+          // Payment method label
+          const paymentLabel = order.paymentMethod === 'bakong_app'
+            ? 'Bakong App ✅'
+            : order.paymentMethod === 'CASH'
+              ? 'Cash ✅'
+              : 'Bakong KHQR ✅';
 
           const message = `🛍️ *New Order Paid! (ការបញ្ជាទិញថ្មីត្រូវបានទូទាត់!)*
-          
-*Order ID:* \`${order._id}\`
+
+*Order ID:* \`${shortId}\`
 *Customer:* ${customerName}
 *Phone:* ${customerPhone}
 *Address:* ${address}
 *Delivery:* ${order.deliveryPartner || 'Standard'}
+*Payment:* ${paymentLabel}
 
 *Items:*
 ${itemsList}
@@ -218,7 +246,7 @@ const getOrdersForStore = async (req, res) => {
     const orders = await Order.find(filter)
       .populate('customerId', 'name email')
       .populate('items.productId', 'title imageUrl')
-      .populate('storeId', 'name contact')
+      .populate('storeId', 'name contact slug')
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -252,6 +280,25 @@ const getCustomerOrders = async (req, res) => {
   }
 };
 
+// @desc    Get order details by ID (Public for tracking)
+// @route   GET /api/orders/:id
+// @access  Public
+const getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('items.productId', 'title imageUrl price')
+      .populate('storeId', 'name branding');
+      
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Update order status
 // @route   PUT /api/orders/:id/status
 // @access  Private (Store Admin)
@@ -269,8 +316,31 @@ const updateOrderStatus = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized to update this order' });
     }
 
+    const oldStatus = order.orderStatus;
     order.orderStatus = orderStatus;
     const updatedOrder = await order.save();
+
+    // Send Telegram Notification to Merchant Group if status changed
+    if (oldStatus !== orderStatus && store.telegramGroupId && process.env.TELEGRAM_BOT_TOKEN) {
+      try {
+        const shortId = order._id.toString().substring(0, 10).toUpperCase();
+        const customerName = order.guestInfo?.name || 'Unknown';
+        
+        let statusEmoji = 'ℹ️';
+        if (orderStatus === 'PROCESSING') statusEmoji = '⏳';
+        else if (orderStatus === 'SHIPPED') statusEmoji = '🚚';
+        else if (orderStatus === 'DELIVERED') statusEmoji = '✅';
+        else if (orderStatus === 'CANCELLED') statusEmoji = '❌';
+
+        const message = `📦 *Order Status Updated!*\n\n*Order ID:* \`${shortId}\`\n*Customer:* ${customerName}\n*Status:* ${oldStatus} ➡️ *${orderStatus}* ${statusEmoji}`;
+        
+        const { sendTelegramNotification } = await import('../services/telegramBot.js');
+        await sendTelegramNotification(store.telegramGroupId, message);
+      } catch (err) {
+        console.error('Failed to send Telegram status update', err);
+      }
+    }
+
     res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -399,4 +469,4 @@ const getStoreAnalytics = async (req, res) => {
   }
 };
 
-export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus, simulateOrderPayment, getStoreAnalytics };
+export { createOrderAndGenerateQR, verifyOrderPayment, getOrdersForStore, getCustomerOrders, updateOrderStatus, getOrderById, simulateOrderPayment, getStoreAnalytics };

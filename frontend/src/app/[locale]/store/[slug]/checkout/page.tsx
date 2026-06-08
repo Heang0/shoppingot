@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
 import { ChevronLeft } from 'lucide-react';
+import Select from 'react-select';
 
 export default function CheckoutPage({ params }: { params: { slug: string, locale: string } }) {
   const { items, getTotalPrice, clearCart, _hasHydrated } = useCartStore();
@@ -29,7 +30,13 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempPhone, setTempPhone] = useState('');
-  const [tempAddress, setTempAddress] = useState('');
+  
+  // Geo Data State
+  const [geoData, setGeoData] = useState<any[]>([]);
+  const [tempProvince, setTempProvince] = useState<any>(null);
+  const [tempDistrict, setTempDistrict] = useState<any>(null);
+  const [tempCommune, setTempCommune] = useState<any>(null);
+  const [tempStreet, setTempStreet] = useState('');
   const [deliveryPartner, setDeliveryPartner] = useState('J&T Express');
   const [deliveryNote, setDeliveryNote] = useState('');
 
@@ -128,6 +135,12 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         setPrimaryColor(previewColor || data.branding?.primaryColor || '#000000');
       })
       .catch(console.error);
+
+    // Fetch Cambodia Geo Data
+    fetch('/data/cambodia_geo.json')
+      .then(res => res.json())
+      .then(data => setGeoData(data))
+      .catch(console.error);
   }, [params.slug, searchParams, items.length, router, params.locale]);
 
   useEffect(() => {
@@ -136,9 +149,18 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
   useEffect(() => {
     if (user) {
-      if (!guestName) setGuestName(user.name || '');
-      if (!guestPhone) setGuestPhone(user.phone || '');
-      if (!guestAddress) setGuestAddress(user.address || '');
+      if (user.addresses && user.addresses.length > 0) {
+        const defaultAddr = user.addresses.find((a: any) => a.isDefault) || user.addresses[0];
+        if (!guestAddress) {
+          setGuestName(defaultAddr.recipientName);
+          setGuestPhone(defaultAddr.phoneNumber);
+          setGuestAddress(defaultAddr.addressString);
+        }
+      } else {
+        if (!guestName) setGuestName(user.name || '');
+        if (!guestPhone) setGuestPhone(user.phone || '');
+        if (!guestAddress) setGuestAddress(user.address || '');
+      }
     }
   }, [user]);
 
@@ -198,35 +220,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         paymentMethod
       };
 
-      // Auto-save address to profile if they are logged in but missing an address
-      if (user && (!user.address || !user.phone)) {
-        try {
-          const profileRes = await fetch('http://localhost:5000/api/users/profile', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${user.token}`
-            },
-            body: JSON.stringify({
-              name: guestName || user.name,
-              phone: guestPhone || user.phone,
-              address: guestAddress || user.address
-            })
-          });
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            setCustomerInfo({
-              ...user,
-              name: profileData.name,
-              phone: profileData.phone,
-              address: profileData.address,
-            });
-          }
-        } catch (err) {
-          console.error('Failed to auto-save profile:', err);
-        }
-      }
-
+      // Auto-saving is handled when they create the address from the modal.
       const endpoint = user ? 'http://localhost:5000/api/orders' : 'http://localhost:5000/api/orders/guest';
       const headers: any = { 'Content-Type': 'application/json' };
       if (user) headers['Authorization'] = `Bearer ${user.token}`;
@@ -263,15 +257,9 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         const data = await res.json();
         if (data.status === 'PAID') {
           setPaymentStatus('PAID');
-          sessionStorage.removeItem('pendingCartQR');
-          clearCart();
           clearInterval(interval);
-          
-          // Auto-redirect after 3 seconds so the user doesn't have to click "Continue"
-          setTimeout(() => {
-            setQrData(null);
-            window.location.href = '/';
-          }, 3000);
+          // Do NOT clear cart or sessionStorage here — that would redirect away
+          // before the success modal is visible. Cleanup is done in onSuccessClose.
         }
       } catch (error) {
         console.error('Polling error', error);
@@ -280,10 +268,13 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
     setTimeout(() => {
       clearInterval(interval);
-      if (paymentStatus === 'PENDING') {
-        setPaymentStatus('FAILED');
-        sessionStorage.removeItem('pendingCartQR');
-      }
+      setPaymentStatus((current) => {
+        if (current === 'PENDING') {
+          sessionStorage.removeItem('pendingCartQR');
+          return 'FAILED';
+        }
+        return current;
+      });
     }, 300000);
   };
 
@@ -318,6 +309,10 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
       </div>
     );
   }
+
+  const provinceOptions = geoData.map((p: any) => ({ value: p, label: isKm ? p.name_km : p.name_en }));
+  const districtOptions = tempProvince ? tempProvince.districts.map((d: any) => ({ value: d, label: isKm ? d.name_km : d.name_en })) : [];
+  const communeOptions = tempDistrict ? tempDistrict.communes.map((c: any) => ({ value: c, label: isKm ? c.name_km : c.name_en })) : [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111]">
@@ -430,6 +425,29 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
             {user ? (
               <div className="space-y-4">
+                {user?.addresses && user.addresses.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-2">{isKm ? 'ជ្រើសរើសអាសយដ្ឋាន' : 'Select Address'}</label>
+                    <select 
+                      className={`w-full p-3 text-sm ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black' : 'border border-gray-200 rounded-lg'} bg-white dark:bg-gray-900`}
+                      onChange={(e) => {
+                        const addr = user?.addresses?.find((a: any) => a._id === e.target.value);
+                        if (addr) {
+                          setGuestName(addr.recipientName);
+                          setGuestPhone(addr.phoneNumber);
+                          setGuestAddress(addr.addressString);
+                        }
+                      }}
+                      value={user?.addresses?.find((a: any) => a.addressString === guestAddress)?._id || ''}
+                    >
+                      <option value="" disabled>{isKm ? 'ជ្រើសរើសអាសយដ្ឋាន...' : 'Select an address...'}</option>
+                      {user?.addresses?.map((addr: any) => (
+                        <option key={addr._id} value={addr._id}>{addr.recipientName} - {addr.addressString}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
                 <div className={`p-4 bg-gray-50 dark:bg-[#1a1a1a] ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : themeStyle === 'minimalist' ? 'border border-gray-200 dark:border-gray-800 rounded-sm' : 'rounded-lg border border-gray-200 dark:border-gray-800'}`}>
                   <div className="flex items-start justify-between">
                     <div>
@@ -441,9 +459,12 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
                 </div>
                 <button
                   onClick={() => {
-                    setTempName('');
-                    setTempPhone('');
-                    setTempAddress('');
+                    setTempName(user?.name || '');
+                    setTempPhone(user?.phone || '');
+                    setTempProvince(null);
+                    setTempDistrict(null);
+                    setTempCommune(null);
+                    setTempStreet('');
                     setIsAddressModalOpen(true);
                   }}
                   className={`w-full py-2.5 text-sm font-semibold transition-all ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white bg-white dark:bg-black hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :
@@ -453,18 +474,6 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
                 >
                   {isKm ? 'បញ្ចូលអាសយដ្ឋានថ្មី' : 'Add New Address'}
                 </button>
-                {guestAddress !== user?.address && (
-                  <button
-                    onClick={() => {
-                      setGuestName(user?.name || '');
-                      setGuestPhone(user?.phone || '');
-                      setGuestAddress(user?.address || '');
-                    }}
-                    className="text-sm font-semibold text-gray-500 hover:text-black dark:hover:text-white underline mt-2 text-center w-full block"
-                  >
-                    {isKm ? 'ត្រលប់ទៅអាសយដ្ឋានដើម' : 'Use default address'}
-                  </button>
-                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -592,7 +601,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
           isPaid={paymentStatus === 'PAID'}
           locale={params.locale}
           onClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); }}
-          onSuccessClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); window.location.href = `/${params.locale}`; }}
+          onSuccessClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); window.location.href = `/${params.locale}/store/${params.slug}/orders/${qrData.orderId}`; }}
           onSimulatePay={handleSimulatePay}
         />
       )}
@@ -631,13 +640,52 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'អាសយដ្ឋានដឹកជញ្ជូន' : 'Address'}</label>
-                <textarea
-                  value={tempAddress}
-                  onChange={e => setTempAddress(e.target.value)}
-                  rows={3}
-                  className={`w-full px-4 py-3 text-sm outline-none transition-all resize-none ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'
-                    }`}
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'រាជធានី/ខេត្ត' : 'Province'}</label>
+                <Select
+                  options={provinceOptions}
+                  value={provinceOptions.find((opt: any) => opt.value.code === tempProvince?.code) || null}
+                  onChange={(selected: any) => {
+                    setTempProvince(selected?.value || null);
+                    setTempDistrict(null);
+                    setTempCommune(null);
+                  }}
+                  placeholder={isKm ? 'ជ្រើសរើសខេត្ត...' : 'Select Province...'}
+                  className="text-sm text-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'ក្រុង/ស្រុក' : 'District'}</label>
+                <Select
+                  options={districtOptions}
+                  value={districtOptions.find((opt: any) => opt.value.code === tempDistrict?.code) || null}
+                  onChange={(selected: any) => {
+                    setTempDistrict(selected?.value || null);
+                    setTempCommune(null);
+                  }}
+                  placeholder={isKm ? 'ជ្រើសរើសស្រុក...' : 'Select District...'}
+                  isDisabled={!tempProvince}
+                  className="text-sm text-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'ឃុំ/សង្កាត់' : 'Commune'}</label>
+                <Select
+                  options={communeOptions}
+                  value={communeOptions.find((opt: any) => opt.value.code === tempCommune?.code) || null}
+                  onChange={(selected: any) => setTempCommune(selected?.value || null)}
+                  placeholder={isKm ? 'ជ្រើសរើសឃុំ...' : 'Select Commune...'}
+                  isDisabled={!tempDistrict}
+                  className="text-sm text-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-1.5">{isKm ? 'ផ្ទះលេខ/ផ្លូវ' : 'Street/House No.'}</label>
+                <input
+                  type="text"
+                  value={tempStreet}
+                  onChange={e => setTempStreet(e.target.value)}
+                  placeholder={isKm ? 'ឧ. ផ្ទះលេខ 12, ផ្លូវ 123' : 'Ex. House 12, Street 123'}
+                  className={`w-full px-4 py-3 text-sm outline-none transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white bg-gray-50 dark:bg-[#1a1a1a] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white'}`}
                 />
               </div>
             </div>
@@ -652,10 +700,45 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
                 {isKm ? 'បោះបង់' : 'Cancel'}
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
+                  if (!tempName || !tempPhone || !tempProvince || !tempDistrict || !tempCommune || !tempStreet) {
+                    alert(isKm ? 'សូមបំពេញព័ត៌មានឲ្យបានគ្រប់គ្រាន់' : 'Please fill all fields');
+                    return;
+                  }
+
+                  const addressParts = [];
+                  if (tempStreet) addressParts.push(tempStreet);
+                  if (tempCommune) addressParts.push(isKm ? tempCommune.name_km : tempCommune.name_en);
+                  if (tempDistrict) addressParts.push(isKm ? tempDistrict.name_km : tempDistrict.name_en);
+                  if (tempProvince) addressParts.push(isKm ? tempProvince.name_km : tempProvince.name_en);
+                  const finalAddress = addressParts.join(', ');
+
+                  if (user) {
+                    try {
+                      const res = await fetch('http://localhost:5000/api/users/addresses', {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${user.token}`
+                        },
+                        body: JSON.stringify({
+                          recipientName: tempName,
+                          phoneNumber: tempPhone,
+                          addressString: finalAddress
+                        })
+                      });
+                      if (res.ok) {
+                        const updatedAddresses = await res.json();
+                        setCustomerInfo({ ...user, addresses: updatedAddresses });
+                      }
+                    } catch (err) {
+                      console.error('Failed to save address', err);
+                    }
+                  }
+                  
                   setGuestName(tempName);
                   setGuestPhone(tempPhone);
-                  setGuestAddress(tempAddress);
+                  setGuestAddress(finalAddress);
                   setIsAddressModalOpen(false);
                 }}
                 className={`flex-1 py-3 text-sm font-bold text-white transition-all ${themeStyle === 'neo-brutalism' ? 'border-[2px] border-black dark:border-white hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' :

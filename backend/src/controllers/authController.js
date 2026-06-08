@@ -20,6 +20,7 @@ const authUser = async (req, res) => {
         profilePic: user.profilePic,
         phone: user.phone,
         address: user.address,
+        addresses: user.addresses,
         token: generateToken(user._id),
       });
     } else {
@@ -62,6 +63,7 @@ const registerUser = async (req, res) => {
         profilePic: user.profilePic,
         phone: user.phone,
         address: user.address,
+        addresses: user.addresses,
         token: generateToken(user._id),
       });
     } else {
@@ -130,6 +132,7 @@ const telegramLogin = async (req, res) => {
       profilePic: user.profilePic,
       phone: user.phone,
       address: user.address,
+      addresses: user.addresses,
       token: generateToken(user._id),
     });
   } catch (error) {

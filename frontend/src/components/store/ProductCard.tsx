@@ -1,7 +1,7 @@
 'use client';
 
 import { useCartStore } from '@/lib/store/useCartStore';
-import { useFavoritesStore } from '@/lib/store/useFavoritesStore';
+import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
 import { ShoppingCart, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -23,9 +23,12 @@ export default function ProductCard({
   const router = useRouter();
   const addItem = useCartStore(state => state.addItem);
   const setDrawerOpen = useCartStore(state => state.setDrawerOpen);
-  const addFavorite = useFavoritesStore(state => state.addFavorite);
-  const removeFavorite = useFavoritesStore(state => state.removeFavorite);
-  const isFavorite = useFavoritesStore(state => state.isFavorite(product._id));
+  const user = useCustomerAuthStore(state => state.customerInfo);
+  const setCustomerInfo = useCustomerAuthStore(state => state.setCustomerInfo);
+
+  const isFavorite = user?.favorites?.some(f => 
+    typeof f === 'string' ? f === product._id : f?._id === product._id
+  );
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,13 +50,28 @@ export default function ProductCard({
     onAddToCart(product);
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isFavorite) {
-      removeFavorite(product._id);
-    } else {
-      addFavorite(product._id);
+    
+    if (!user) {
+      alert("Please login to save favorites.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/favorites/${product._id}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      if (res.ok) {
+        const updatedFavorites = await res.json();
+        setCustomerInfo({ ...user, favorites: updatedFavorites });
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 

@@ -2,7 +2,7 @@
 
 import { QRCodeSVG } from 'qrcode.react';
 import { useState, useEffect } from 'react';
-import { X, CheckCircle2 } from 'lucide-react';
+import { X, CheckCircle2, Clock, ShieldCheck } from 'lucide-react';
 
 interface BakongKHQRModalProps {
   qrString: string;
@@ -25,41 +25,34 @@ export default function BakongKHQRModal({
   locale = 'en',
   onClose,
   onSuccessClose,
-  onSimulatePay
 }: BakongKHQRModalProps) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 mins
+  const [timeLeft, setTimeLeft] = useState(300);
   const isKm = locale === 'km';
+
+  const khmerFont = { fontFamily: "var(--font-kantumruy), 'Kantumruy Pro', sans-serif" };
+  const numFont = { fontFamily: '"Nunito Sans", "Inter", sans-serif' };
+
   const text = {
     cancelPayment: isKm ? 'បោះបង់ការទូទាត់?' : 'Cancel Payment?',
     cancelConfirm: isKm ? 'តើអ្នកប្រាកដជាចង់បោះបង់ប្រតិបត្តិការនេះមែនទេ?' : 'Are you sure you want to cancel this transaction?',
-    no: isKm ? 'ទេ' : 'No',
-    yes: isKm ? 'បាទ/ចាស' : 'Yes',
-    paymentSuccessful: isKm ? 'ការទូទាត់បានជោគជ័យ' : 'Payment Successful',
-    verified: isKm ? 'ប្រតិបត្តិការរបស់អ្នកត្រូវបានផ្ទៀងផ្ទាត់។' : 'Your transaction has been verified.',
-    continue: isKm ? 'បន្ត' : 'Continue',
+    no: isKm ? 'ទេ' : 'No, keep it',
+    yes: isKm ? 'បាទ/ចាស, បោះបង់' : 'Yes, cancel',
+    paymentSuccessful: isKm ? 'ការទូទាត់បានជោគជ័យ!' : 'Payment Successful!',
+    verified: isKm ? 'ប្រតិបត្តិការរបស់អ្នកត្រូវបានផ្ទៀងផ្ទាត់និងបញ្ជាក់ដោយជោគជ័យ។' : 'Your payment has been verified and confirmed.',
+    orderConfirmed: isKm ? 'ការបញ្ជាទិញបានបញ្ជាក់' : 'Order Confirmed',
+    continue: isKm ? 'បន្ត' : 'Continue Shopping',
     expiresIn: isKm ? 'ផុតកំណត់ក្នុង' : 'Expires in',
-    status: isKm ? 'ស្ថានភាព' : 'Status',
-    waiting: isKm ? 'កំពុងរង់ចាំ...' : 'Waiting...',
-    simulatePayment: isKm ? '[DEV] សាកល្បងការទូទាត់' : '[DEV] Simulate Payment',
-    openBakongApp: isKm ? 'បើកកម្មវិធីបាគង' : 'Open Bakong App',
+    scanQR: isKm ? 'ស្កេនដើម្បីទូទាត់' : 'Scan to Pay',
+    awaitingPayment: isKm ? 'កំពុងរង់ចាំការទូទាត់...' : 'Awaiting payment...',
+    securePayment: isKm ? 'ការទូទាត់មានសុវត្ថិភាព' : 'Secure Payment',
   };
 
   useEffect(() => {
     if (isPaid || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [isPaid, timeLeft]);
-
-  const handleCloseClick = () => {
-    setShowCancelConfirm(true);
-  };
-
-  const confirmCancel = () => {
-    onClose();
-  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -67,23 +60,28 @@ export default function BakongKHQRModal({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
 
       {/* Main Container */}
       <div className="relative flex flex-col items-center">
 
+        {/* KHQR Card */}
         <div
-          id="khqr-modal"
           className="bg-white rounded-2xl relative overflow-hidden flex flex-col"
-          style={{ width: '330px', height: '479px', boxShadow: '0 0 16px rgba(0,0,0,0.1)' }}
+          style={{ width: '330px', height: '479px', fontFamily: isKm ? khmerFont.fontFamily : numFont.fontFamily, boxShadow: '0 0 16px rgba(0,0,0,0.1)' }}
         >
           {/* Header */}
-          <div className="h-[57px] bg-[#E1232E] w-full shrink-0 flex items-center justify-center relative z-10">
+          <div className="h-[57px] bg-[#E1232E] w-full shrink-0 flex items-center justify-end px-4 relative z-10">
+            {/* Centered Logo */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo/KHQR Logo.png" alt="KHQR Logo" className="h-[18px] object-contain brightness-0 invert" />
-            <button onClick={handleCloseClick} className="absolute right-4 text-white/80 hover:text-white transition-colors">
+            <img 
+              src="/logo/KHQR Logo.png" 
+              alt="KHQR" 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 object-contain brightness-0 invert" 
+            />
+            
+            <button onClick={() => setShowCancelConfirm(true)} className="text-white/80 hover:text-white transition-colors relative z-20">
               <X size={24} />
             </button>
             {/* Downward Tail */}
@@ -95,82 +93,101 @@ export default function BakongKHQRModal({
 
             {/* Text Alignment Left strictly enforced */}
             <div className="text-left w-full mb-auto">
-              <div className="text-[#000000] text-[14px] font-normal leading-none mb-2 truncate">{merchantName}</div>
+              <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1" style={isKm ? khmerFont : numFont}>{text.scanQR}</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-[#000000] text-[31px] font-bold leading-none tracking-[0px]" style={{ fontFamily: '"Nunito Sans", sans-serif' }}>{amount.toFixed(2)}</span>
-                <span className="text-[#000000] text-[14px] font-normal leading-none tracking-[0px]">{currency}</span>
+                <span className="text-[#000000] text-[31px] font-bold leading-none tracking-[0px]" style={numFont}>{amount.toFixed(2)}</span>
+                <span className="text-[#000000] text-[14px] font-normal leading-none tracking-[0px]" style={numFont}>{currency}</span>
               </div>
+              <div className="text-[#000000] text-[14px] font-normal mt-2 truncate" style={isKm ? khmerFont : numFont}>{merchantName}</div>
             </div>
 
             {/* Dashed Line Separator */}
             <div className="w-full border-t-[2px] border-dashed border-gray-300/80 my-2"></div>
 
+            {/* QR Code Section */}
             <div className="w-full aspect-square relative mt-4 mx-auto max-w-[234px] flex items-center justify-center bg-white">
               <QRCodeSVG value={qrString} size={234} />
 
               {/* Center Coin Badge */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[42px] h-[42px] bg-[#000000] rounded-full flex items-center justify-center border-[3px] border-[#FFFFFF] box-content">
-                <span className="text-white font-medium text-xl leading-none pt-0.5">$</span>
+                <span className="text-white font-bold text-xl leading-none pt-0.5" style={numFont}>$</span>
               </div>
             </div>
 
           </div>
 
-          {/* Cancel Confirmation */}
+          {/* Overlays inside the card structure */}
+
           {showCancelConfirm && !isPaid && (
             <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-200">
-              <h3 className="text-xl font-medium text-gray-900 mb-2">{text.cancelPayment}</h3>
-              <p className="text-sm text-gray-500 mb-8">{text.cancelConfirm}</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2" style={isKm ? khmerFont : numFont}>{text.cancelPayment}</h3>
+              <p className="text-sm text-gray-500 mb-8" style={isKm ? khmerFont : numFont}>{text.cancelConfirm}</p>
               <div className="flex w-full gap-3">
-                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-3 bg-gray-100 text-gray-900 font-medium rounded-xl hover:bg-gray-200">{text.no}</button>
-                <button onClick={confirmCancel} className="flex-1 py-3 bg-[#E1232E] text-white font-medium rounded-xl hover:bg-red-700">{text.yes}</button>
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+                  style={isKm ? khmerFont : numFont}
+                >
+                  {text.no}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-3 bg-[#E1232E] text-white font-bold rounded-xl hover:bg-red-700 transition-colors text-sm"
+                  style={isKm ? khmerFont : numFont}
+                >
+                  {text.yes}
+                </button>
               </div>
             </div>
           )}
 
-          {/* Success Modal */}
+          {/* Success Overlay */}
           {isPaid && (
-            <div className="absolute inset-0 bg-white z-30 flex flex-col items-center justify-center p-8 text-center animate-in fade-in slide-in-from-bottom-8 duration-500">
-              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-                <CheckCircle2 size={48} className="text-green-500" strokeWidth={2.5} />
+            <div className="absolute inset-0 bg-white z-30 flex flex-col items-center justify-center p-8 text-center">
+              {/* Animated success ring */}
+              <div className="relative mb-6">
+                <div className="w-24 h-24 rounded-full bg-green-50 flex items-center justify-center">
+                  <CheckCircle2 size={52} className="text-green-500" strokeWidth={1.8} />
+                </div>
+                <div className="absolute inset-0 rounded-full border-4 border-green-200 animate-ping opacity-30" />
               </div>
-              <h3 className="text-2xl font-medium text-gray-900 mb-2">{text.paymentSuccessful}</h3>
-              <p className="text-sm text-gray-500 mb-8">{text.verified}</p>
-              <button onClick={onSuccessClose || onClose} className="w-full py-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-black shadow-lg">
+
+              <span className="inline-block bg-green-50 text-green-600 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3" style={numFont}>
+                {text.orderConfirmed}
+              </span>
+
+              <h3
+                className="text-2xl font-bold text-gray-900 mb-2"
+                style={isKm ? khmerFont : numFont}
+              >
+                {text.paymentSuccessful}
+              </h3>
+
+              <p
+                className="text-sm text-gray-500 mb-2 leading-relaxed"
+                style={isKm ? khmerFont : numFont}
+              >
+                {text.verified}
+              </p>
+
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-8" style={numFont}>
+                <ShieldCheck size={12} className="text-green-400" />
+                <span>{text.securePayment}</span>
+              </div>
+
+              <button
+                onClick={onSuccessClose || onClose}
+                className="w-full py-4 bg-gray-900 hover:bg-black text-white font-semibold rounded-2xl transition-colors shadow-lg text-sm"
+                style={isKm ? khmerFont : numFont}
+              >
                 {text.continue}
               </button>
             </div>
           )}
         </div>
 
-        {/* Floating Details (Outside Card) */}
-        <div className="w-[330px] mt-6 flex flex-col gap-3">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
-            <span className="font-medium">{text.expiresIn}</span>
-            <span className="font-bold tracking-widest" style={{ fontFamily: '"Nunito Sans", sans-serif' }}>{formatTime(timeLeft)}</span>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center justify-between text-white/90 text-sm shadow-lg border border-white/5">
-            <span className="font-medium">{text.status}</span>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-              </span>
-              <span className="font-medium text-blue-100">{text.waiting}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* DEV ONLY: Simulate Webhook Button */}
-        {onSimulatePay && !isPaid && (
-          <button
-            onClick={onSimulatePay}
-            className="mt-4 bg-[#E1232E] text-white text-xs font-medium uppercase tracking-widest py-2 px-6 rounded-full hover:bg-red-700 shadow-[0_0_15px_rgba(225,35,46,0.5)] border border-red-500/50"
-          >
-            {text.simulatePayment}
-          </button>
-        )}
-
+        {/* Powered by tag */}
+        <p className="text-white/30 text-xs mt-4 font-medium" style={numFont}>Powered by Bakong KHQR · NBC Cambodia</p>
       </div>
     </div>
   );
