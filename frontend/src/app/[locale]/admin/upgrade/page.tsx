@@ -57,12 +57,12 @@ export default function UpgradePlan() {
   const fetchData = async () => {
     try {
       // Fetch plans
-      const plansRes = await fetch('http://localhost:5000/api/superadmin/plans');
+      const plansRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/plans`);
       const plansData = await plansRes.json();
       setPlans(plansData);
 
       // Fetch user's store
-      const storesRes = await fetch('http://localhost:5000/api/stores', {
+      const storesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const storesData = await storesRes.json();
@@ -98,7 +98,7 @@ export default function UpgradePlan() {
     const selected = plans.find(p => p._id === planId);
     if (selected && selected.price === 0) {
       try {
-        const res = await fetch('http://localhost:5000/api/subscription/free-plan', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/subscription/free-plan`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export default function UpgradePlan() {
     }
 
     try {
-        const res = await fetch('http://localhost:5000/api/subscription/generate-qr', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/subscription/generate-qr`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ export default function UpgradePlan() {
   const pollPaymentStatus = (paymentId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/subscription/verify', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/subscription/verify`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -188,7 +188,7 @@ export default function UpgradePlan() {
   const handleSimulatePay = async () => {
     if (!qrData?.paymentId) return;
     try {
-      await fetch(`http://localhost:5000/api/subscription/simulate-pay`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/subscription/simulate-pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentId: qrData.paymentId }),

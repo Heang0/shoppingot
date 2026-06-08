@@ -26,7 +26,7 @@ export default function StoreSetup() {
 
   useEffect(() => {
     if (user?.token) {
-      fetch('http://localhost:5000/api/stores', {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       .then(res => res.json())
@@ -65,7 +65,7 @@ export default function StoreSetup() {
 
     try {
       // Create new store
-      const res = await fetch('http://localhost:5000/api/stores', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export default function StoreSetup() {
 
       // Update Bakong Settings if entered
       if (bakongId && storeId) {
-        await fetch(`http://localhost:5000/api/stores/${storeId}/payment-settings`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${storeId}/payment-settings`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',

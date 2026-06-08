@@ -29,7 +29,7 @@ export default function StoresManagement() {
 
   const fetchStores = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/stores', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -43,7 +43,7 @@ export default function StoresManagement() {
 
   const toggleStore = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/superadmin/stores/${id}/toggle`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/stores/${id}/toggle`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${user?.token}` }
       });

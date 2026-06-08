@@ -3,7 +3,7 @@ import StoreTopNav from '@/components/store/StoreTopNav';
 import CartDrawer from '@/components/store/CartDrawer';
 
 async function getStore(slug: string) {
-  const res = await fetch(`http://localhost:5000/api/stores/${slug}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${slug}`, { next: { revalidate: 60 } });
   if (!res.ok) return null;
   return res.json();
 }

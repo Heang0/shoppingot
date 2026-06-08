@@ -32,14 +32,14 @@ export default function FavoritesPage({ params }: { params: { locale: string; sl
   useEffect(() => {
     const loadStoreAndProducts = async () => {
       try {
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
         setPrimaryColor(store.branding?.primaryColor || '#000000');
         setThemeStyle(store.branding?.themeStyle || 'default');
 
-        const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+        const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${store._id}`);
         const prods = await prodRes.json();
         
         // Filter products that are in the favorites store

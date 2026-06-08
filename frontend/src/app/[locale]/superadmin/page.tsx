@@ -11,7 +11,7 @@ export default function SuperadminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/superadmin/dashboard', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/dashboard`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         const data = await res.json();

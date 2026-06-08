@@ -38,7 +38,7 @@ export default function ThemeCustomizer() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/stores', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         const stores = await res.json();
@@ -62,7 +62,7 @@ export default function ThemeCustomizer() {
     if (!storeId) return;
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/stores/${storeId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${storeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

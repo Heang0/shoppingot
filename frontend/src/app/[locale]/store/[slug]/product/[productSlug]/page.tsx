@@ -64,8 +64,8 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
     const fetchProductAndStore = async () => {
       try {
         const [prodRes, storeRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/products/${params.productSlug}`),
-          fetch(`http://localhost:5000/api/stores/${params.slug}`)
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/${params.productSlug}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`)
         ]);
         if (!prodRes.ok) throw new Error('Failed to load product');
         const data = await prodRes.json();
@@ -78,7 +78,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
           setPrimaryColor(store.branding?.primaryColor || '#000000');
           
           // Fetch all store products to find related ones
-          const allProdRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+          const allProdRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${store._id}`);
           if (allProdRes.ok) {
             const prodData = await allProdRes.json();
             const allProducts = prodData.products || [];

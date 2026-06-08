@@ -32,7 +32,7 @@ export default function PlansManagement() {
 
   const fetchPlans = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/superadmin/plans', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/plans`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       const data = await res.json();
@@ -64,8 +64,8 @@ export default function PlansManagement() {
     e.preventDefault();
     try {
       const url = editingPlan 
-        ? `http://localhost:5000/api/superadmin/plans/${editingPlan._id}`
-        : 'http://localhost:5000/api/superadmin/plans';
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/plans/${editingPlan._id}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/plans`;
         
       const method = editingPlan ? 'PUT' : 'POST';
 
@@ -94,7 +94,7 @@ export default function PlansManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this plan?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/superadmin/plans/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/plans/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });

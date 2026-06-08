@@ -44,7 +44,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
     setMounted(true);
     const loadCategories = async () => {
       try {
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${slug}`);
+        const storeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${slug}`);
         if (!storeRes.ok) return;
         const store = await storeRes.json();
         
@@ -52,7 +52,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
         if (store.branding?.logoUrl) setLogoUrl(store.branding.logoUrl);
 
-        const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
+        const catRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/categories/store/${store._id}`);
         if (catRes.ok) {
           const cats = await catRes.json();
           setCategories(cats || []);

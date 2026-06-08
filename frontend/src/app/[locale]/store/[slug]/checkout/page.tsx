@@ -124,7 +124,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
       } catch (e) { }
     }
 
-    fetch(`http://localhost:5000/api/stores/${params.slug}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`)
       .then(res => res.json())
       .then(data => {
         setStoreId(data._id);
@@ -169,7 +169,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     setApplyingPromo(true);
     setPromoError('');
     try {
-      const res = await fetch('http://localhost:5000/api/promos/validate', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/promos/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -221,7 +221,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
       };
 
       // Auto-saving is handled when they create the address from the modal.
-      const endpoint = user ? 'http://localhost:5000/api/orders' : 'http://localhost:5000/api/orders/guest';
+      const endpoint = user ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/guest`;
       const headers: any = { 'Content-Type': 'application/json' };
       if (user) headers['Authorization'] = `Bearer ${user.token}`;
 
@@ -249,7 +249,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const pollPaymentStatus = (orderId: string, md5: string) => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${orderId}/verify`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/${orderId}/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ md5 }),
@@ -281,7 +281,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const handleSimulatePay = async () => {
     if (!qrData?.orderId) return;
     try {
-      await fetch(`http://localhost:5000/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/${qrData.orderId}/simulate-pay`, { method: 'POST' });
     } catch (err) {
       console.error(err);
     }
@@ -715,7 +715,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
                   if (user) {
                     try {
-                      const res = await fetch('http://localhost:5000/api/users/addresses', {
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/addresses`, {
                         method: 'POST',
                         headers: { 
                           'Content-Type': 'application/json',

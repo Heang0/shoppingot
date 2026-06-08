@@ -71,7 +71,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
     const fetchStoreAndOrders = async () => {
       try {
         // 1. Always Fetch Store Details for Branding
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const storeData = await storeRes.json();
         setStoreId(storeData._id);
@@ -80,7 +80,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
 
         // 2. Fetch Customer Orders if Logged In
         if (user) {
-          const ordersRes = await fetch('http://localhost:5000/api/orders/customer', {
+          const ordersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/customer`, {
             headers: { Authorization: `Bearer ${user.token}` }
           });
           if (ordersRes.ok) {
@@ -140,7 +140,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
       formData.append('image', file);
 
       // Upload image
-      const uploadRes = await fetch('http://localhost:5000/api/upload?type=profile', {
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/upload?type=profile`, {
         method: 'POST',
         body: formData,
       });
@@ -148,7 +148,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
       if (!uploadRes.ok) throw new Error(uploadData.message || 'Upload failed');
 
       // Update profile
-      const profileRes = await fetch('http://localhost:5000/api/users/profile', {
+      const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
   const handleDeleteAddress = async (id: string) => {
     if (!confirm(params.locale === 'km' ? 'តើអ្នកពិតជាចង់លុបអាសយដ្ឋាននេះមែនទេ?' : 'Are you sure you want to delete this address?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/users/addresses/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/addresses/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -187,7 +187,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
 
   const handleSetDefaultAddress = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/addresses/${id}/default`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/addresses/${id}/default`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -211,8 +211,8 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
     
     try {
       const endpoint = editingAddressId 
-        ? `http://localhost:5000/api/users/addresses/${editingAddressId}`
-        : 'http://localhost:5000/api/users/addresses';
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/addresses/${editingAddressId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/addresses`;
         
       const method = editingAddressId ? 'PUT' : 'POST';
 

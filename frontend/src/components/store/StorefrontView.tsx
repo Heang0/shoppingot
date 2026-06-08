@@ -53,7 +53,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const storeRes = await fetch(`http://localhost:5000/api/stores/${params.slug}`);
+        const storeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
@@ -65,13 +65,13 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
         setThemeStyle(tStyle);
         setBannerUrl(bUrl);
 
-        const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
+        const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${store._id}`);
         const prods = await prodRes.json();
         const loadedProducts = prods.products || [];
         setProducts(loadedProducts);
 
         let loadedCategories = [];
-        const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
+        const catRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/categories/store/${store._id}`);
         if (catRes.ok) {
           loadedCategories = await catRes.json();
           setCategories(loadedCategories);
