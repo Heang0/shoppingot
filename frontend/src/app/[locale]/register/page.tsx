@@ -36,8 +36,7 @@ export default function RegisterPage() {
       }
 
       setUser(data);
-      alert('Registration successful! Please configure your store settings.');
-      router.push('/admin/settings'); // Redirect to settings
+      router.push('/admin/setup'); // Redirect to Setup Wizard
       
     } catch (err: any) {
       setError(err.message);

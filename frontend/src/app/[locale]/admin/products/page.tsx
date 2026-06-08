@@ -274,7 +274,7 @@ export default function ManageProducts() {
           { name: 'Storage', options: '64GB, 128GB, 256GB' },
           { name: 'Color', options: 'Black, Silver, Gold' }
         ]);
-      } else if (storeCategory === 'Supplements (អាហារបំប៉ន់)') {
+      } else if (storeCategory === 'Supplements') {
         setVariants([
           { name: 'Flavor (រសជាតិ)', options: 'Vanilla, Chocolate, Strawberry, Unflavored' },
           { name: 'Size (ទំហំ/ទម្ងន់)', options: '30 Servings, 60 Servings, 1KG, 2KG' }
@@ -344,7 +344,7 @@ export default function ManageProducts() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gallery Images (Max 3)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('gallery_images')}</label>
               <div className="flex flex-col gap-2">
                 <input type="file" multiple accept="image/*" onChange={handleExtraUpload} disabled={images.length >= 3} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400 disabled:opacity-50" />
                 {images.length > 0 && (
@@ -360,11 +360,11 @@ export default function ManageProducts() {
               </div>
             </div>
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Flags</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('flags')}</label>
               <div className="flex flex-wrap gap-6">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input type="checkbox" checked={isBestSeller} onChange={(e) => setIsBestSeller(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-[#E84C3D] focus:ring-[#E84C3D]" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Best Seller</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('best_seller')}</span>
                 </label>
               </div>
             </div>

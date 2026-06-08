@@ -48,8 +48,9 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
     relatedProducts: isKm ? 'ផលិតផលស្រដៀងគ្នា' : 'You might also like',
   };
 
-  const showToast = (product: any) => {
-    setToast({ message: `${product.title} added to cart!`, visible: true });
+  const showToast = (prod: any) => {
+    const title = isKm && prod.titleKm ? prod.titleKm : prod.title;
+    setToast({ message: `${title} ${text.addedToCart}`, visible: true });
     setTimeout(() => setToast(t => ({ ...t, visible: false })), 2500);
   };
 
@@ -119,7 +120,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
       selectedVariants,
     });
 
-    setDrawerOpen(true);
+    showToast(product);
   };
 
   if (loading) {

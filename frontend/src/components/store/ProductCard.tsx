@@ -44,7 +44,6 @@ export default function ProductCard({
       quantity: 1,
       imageUrl: product.imageUrl,
     });
-    setDrawerOpen(true);
     onAddToCart(product);
   };
 

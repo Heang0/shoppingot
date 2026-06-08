@@ -240,6 +240,8 @@ export default function AdminSettings() {
     }
   };
 
+  const isFreePlan = storeData && (!storeData.plan?.planId || storeData.plan?.planId?.name === 'Free' || typeof storeData.plan?.planId === 'string');
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <AdminToast message={successMsg} visible={!!successMsg} />
@@ -433,28 +435,28 @@ export default function AdminSettings() {
               </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('store_phone')}</label>
                   <input
                     type="text"
                     value={storeData.contact?.phone || ''}
                     onChange={(e) => setStoreData({ ...storeData, contact: { ...storeData.contact, phone: e.target.value } })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
-                    placeholder="e.g. +855 12 345 678"
+                    placeholder={t('eg_phone')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Address</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('store_address')}</label>
                   <textarea
                     value={storeData.contact?.address || ''}
                     onChange={(e) => setStoreData({ ...storeData, contact: { ...storeData.contact, address: e.target.value } })}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors h-24"
-                    placeholder="Your physical store or return address"
+                    placeholder={t('address_placeholder')}
                   />
                 </div>
 
               <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delivery Settings</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('delivery_settings')}</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -469,14 +471,14 @@ export default function AdminSettings() {
                       className="w-5 h-5 text-[#E84C3D] rounded focus:ring-[#E84C3D]"
                     />
                     <label htmlFor="freeDelivery" className="text-sm font-medium text-gray-900 dark:text-white">
-                      Enable "Buy $... Up To Get Free Delivery"
+                      {t('enable_free_delivery')}
                     </label>
                   </div>
                   
                   {storeData.deliverySettings?.isFreeDeliveryEnabled && (
                     <div className="pl-8">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Minimum Purchase for Free Delivery ($)
+                        {t('min_purchase_free_delivery')}
                       </label>
                       <input
                         type="number"
@@ -488,7 +490,7 @@ export default function AdminSettings() {
                           deliverySettings: { ...storeData.deliverySettings, freeDeliveryThreshold: Number(e.target.value) } 
                         })}
                         className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
-                        placeholder="e.g. 50"
+                        placeholder={t('eg_50')}
                       />
                     </div>
                   )}
@@ -500,14 +502,14 @@ export default function AdminSettings() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_banner')}</label>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     {storeData.branding?.bannerUrl && (
                       <div className="h-16 w-32 rounded bg-gray-200 dark:bg-gray-800 overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
                         <img src={storeData.branding.bannerUrl} alt="Store Banner" className="h-full w-full object-cover" />
                       </div>
                     )}
                     <div>
-                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
+                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap inline-block text-center w-full sm:w-auto">
                         {uploading ? t('uploading') : t('upload_banner')}
                         <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading} />
                       </label>
@@ -516,12 +518,12 @@ export default function AdminSettings() {
                 </div>
                 
                 <div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex items-center justify-between">
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-gray-900 dark:text-white">{t('theme_customizer_title')}</h4>
                       <p className="text-sm text-gray-500 mt-1">{t('theme_customizer_desc')}</p>
                     </div>
-                    <Link href="/admin/settings/theme" className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors">
+                    <Link href="/admin/settings/theme" className="w-full sm:w-auto text-center px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors whitespace-nowrap">
                       {t('customize_theme_btn')}
                     </Link>
                   </div>
@@ -550,12 +552,12 @@ export default function AdminSettings() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('payment_settings')}</h3>
               
               <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800 space-y-6">
-                {(storeData as any)?.plan?.planId?.name === 'Free' && (
+                {isFreePlan && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg text-sm border border-yellow-200 dark:border-yellow-800/50 flex items-start gap-3">
                     <span className="text-xl">⚠️</span>
                     <div>
-                      <p className="font-semibold">Upgrade Required</p>
-                      <p className="mt-1">KHQR automatic payments are only available on Pro and Premium plans. Please upgrade to unlock.</p>
+                      <p className="font-semibold">{t('upgrade_required')}</p>
+                      <p className="mt-1">{t('upgrade_desc')}</p>
                     </div>
                   </div>
                 )}
@@ -567,8 +569,8 @@ export default function AdminSettings() {
                     value={storeData.paymentSettings?.bakongId || ''}
                     onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, bakongId: e.target.value } })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="e.g. yourbusiness@bkrt"
-                    disabled={(storeData as any)?.plan?.planId?.name === 'Free'}
+                    placeholder={t('eg_bakong')}
+                    disabled={isFreePlan}
                   />
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('bakong_warning')}</p>
                 </div>
@@ -578,12 +580,13 @@ export default function AdminSettings() {
                   <select 
                     value={storeData.paymentSettings?.currency || 'USD'} 
                     onChange={(e) => setStoreData({ ...storeData, paymentSettings: { ...storeData.paymentSettings, currency: e.target.value } })} 
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isFreePlan}
                   >
-                    <option value="USD">USD (US Dollar)</option>
-                    <option value="KHR">KHR (Khmer Riel)</option>
+                    <option value="USD">{t('usd_label')}</option>
+                    <option value="KHR">{t('khr_label')}</option>
                   </select>
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Choose the default currency for generating your KHQR codes.</p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{t('currency_desc')}</p>
                 </div>
               </div>
 

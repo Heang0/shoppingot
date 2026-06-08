@@ -71,9 +71,14 @@ export default function UpgradePlan() {
         setStoreId(myStore._id);
         setStoreData(myStore);
         setCurrentStorePlan(myStore.plan);
+        let foundPlanId = null;
         if (myStore.plan && myStore.plan.planId) {
-          setCurrentPlanId(myStore.plan.planId._id || myStore.plan.planId);
+          foundPlanId = myStore.plan.planId._id || myStore.plan.planId;
+        } else {
+          const freePlan = plansData.find((p: any) => p.name === 'Free');
+          if (freePlan) foundPlanId = freePlan._id;
         }
+        setCurrentPlanId(foundPlanId);
       }
       
     } catch (err) {
