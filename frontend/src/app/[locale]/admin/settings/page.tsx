@@ -118,9 +118,8 @@ export default function AdminSettings() {
   const handleCopyUrl = () => {
     if (!storeData) return;
     const isVercel = baseDomain.includes('vercel.app');
-    const locale = window.location.pathname.split('/')[1] || 'km';
     const url = isVercel 
-      ? `https://shoppingot.vercel.app/${locale}/store/${storeData.slug}` 
+      ? `https://shoppingot.vercel.app/store/${storeData.slug}` 
       : `http://${storeData.slug}${baseDomain}`;
       
     navigator.clipboard.writeText(url);
@@ -474,7 +473,7 @@ export default function AdminSettings() {
                   <input
                     type="text"
                     readOnly
-                    value={baseDomain.includes('vercel.app') ? `https://shoppingot.vercel.app/km/store/${storeData.slug}` : `http://${storeData.slug}${baseDomain}`}
+                    value={baseDomain.includes('vercel.app') ? `https://shoppingot.vercel.app/store/${storeData.slug}` : `http://${storeData.slug}${baseDomain}`}
                     className="flex-1 px-4 py-3 border border-r-0 rounded-l-lg border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 outline-none cursor-not-allowed"
                   />
                   <button 
