@@ -13,6 +13,8 @@ dotenv.config();
 // Connect to database
 connectDB();
 
+import './services/telegramBot.js';
+
 import authRoutes from './routes/authRoutes.js';
 import planRoutes from './routes/planRoutes.js';
 import storeRoutes from './routes/storeRoutes.js';

@@ -21,6 +21,9 @@ function AddToCartToast({ message, visible }: { message: string; visible: boolea
   );
 }
 
+// --- In-Memory Cache for SPA Navigation ---
+const storeCache: Record<string, any> = {};
+
 // --- Shared Storefront View ---
 export default function StorefrontView({ params, categorySlug, viewMode = 'home' }: { params: { locale: string; slug: string }, categorySlug?: string, viewMode?: 'home' | 'catalog' | 'promotions' | 'categories' }) {
   const searchParams = useSearchParams();
@@ -28,14 +31,17 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
   const previewTheme = searchParams.get('theme');
   const previewColor = searchParams.get('color');
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const cacheKey = `${params.slug}-${previewTheme || ''}-${previewColor || ''}`;
+  const cached = storeCache[cacheKey];
+
+  const [products, setProducts] = useState<any[]>(cached?.products || []);
+  const [categories, setCategories] = useState<any[]>(cached?.categories || []);
   // We determine active category by the slug, or 'All'
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(categorySlug || 'All');
-  const [loading, setLoading] = useState(true);
-  const [primaryColor, setPrimaryColor] = useState<string>('#000000');
-  const [themeStyle, setThemeStyle] = useState<string>('default');
-  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!cached);
+  const [primaryColor, setPrimaryColor] = useState<string>(previewColor || cached?.primaryColor || '#000000');
+  const [themeStyle, setThemeStyle] = useState<string>(previewTheme || cached?.themeStyle || 'default');
+  const [bannerUrl, setBannerUrl] = useState<string | null>(cached?.bannerUrl || null);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const allLabel = params.locale === 'km' ? 'ទាំងអស់' : 'All';
   const isKm = params.locale === 'km';
@@ -51,19 +57,33 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         
-        setPrimaryColor(previewColor || store.branding?.primaryColor || '#000000');
-        setThemeStyle(previewTheme || store.branding?.themeStyle || 'default');
-        setBannerUrl(store.branding?.bannerUrl || null);
+        const pColor = previewColor || store.branding?.primaryColor || '#000000';
+        const tStyle = previewTheme || store.branding?.themeStyle || 'default';
+        const bUrl = store.branding?.bannerUrl || null;
+
+        setPrimaryColor(pColor);
+        setThemeStyle(tStyle);
+        setBannerUrl(bUrl);
 
         const prodRes = await fetch(`http://localhost:5000/api/products/store/${store._id}`);
         const prods = await prodRes.json();
-        setProducts(prods.products || []);
+        const loadedProducts = prods.products || [];
+        setProducts(loadedProducts);
 
+        let loadedCategories = [];
         const catRes = await fetch(`http://localhost:5000/api/categories/store/${store._id}`);
         if (catRes.ok) {
-          const cats = await catRes.json();
-          setCategories(cats);
+          loadedCategories = await catRes.json();
+          setCategories(loadedCategories);
         }
+
+        storeCache[cacheKey] = {
+          products: loadedProducts,
+          categories: loadedCategories,
+          primaryColor: store.branding?.primaryColor || '#000000',
+          themeStyle: store.branding?.themeStyle || 'default',
+          bannerUrl: bUrl
+        };
       } catch (err) {
         console.error(err);
       } finally {
@@ -71,7 +91,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
       }
     };
     loadProducts();
-  }, [params.slug, previewColor, previewTheme]);
+  }, [params.slug, previewColor, previewTheme, cacheKey]);
 
   const showToast = useCallback((product: any) => {
     setToast({ message: `${product.title} added to cart!`, visible: true });
@@ -143,7 +163,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-8">
               {isKm ? 'ប្រភេទទាំងអស់' : 'All Categories'}
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {categories.map(cat => {
                 const count = products.filter(p => {
                   const pCat = p.category?._id ?? p.category;
@@ -153,13 +173,20 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
                   <Link 
                     key={cat._id}
                     href={getAppendParams(`/${params.locale}/category/${cat.slug}`)}
-                    className={`flex flex-col bg-white dark:bg-[#111111] border rounded-2xl p-6 transition-all duration-300 group ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-100 dark:border-gray-800 hover:shadow-xl hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-1'}`}
+                    className={`relative flex flex-col justify-between overflow-hidden bg-white dark:bg-[#111111] border rounded-3xl p-6 sm:p-8 transition-all duration-300 group min-h-[160px] ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-xl' : 'border-gray-100 dark:border-gray-800 hover:shadow-xl hover:border-gray-200 dark:hover:border-gray-700 hover:-translate-y-1 hover:bg-gray-50 dark:hover:bg-gray-900/50'}`}
                   >
-                    <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white group-hover:opacity-80 transition-opacity">
-                      {isKm && cat.nameKm ? cat.nameKm : cat.name}
-                    </span>
-                    <div className="mt-4 flex items-center justify-end">
-                      <span className="text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors transform group-hover:translate-x-1 duration-300">&rarr;</span>
+                    <div className="flex items-center justify-between mb-auto">
+                      <span className={`inline-flex items-center justify-center text-xs font-bold uppercase tracking-wider px-3 py-1 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white bg-white text-black dark:bg-black dark:text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]' : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full'}`}>
+                        {count} {isKm ? 'ផលិតផល' : 'Items'}
+                      </span>
+                      <div className={`w-8 h-8 flex items-center justify-center transition-all duration-300 ${themeStyle === 'neo-brutalism' ? 'border-2 border-black dark:border-white bg-[#f0f0f0] dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-800 rounded-full group-hover:bg-white dark:group-hover:bg-[#222]'}`} style={themeStyle !== 'neo-brutalism' ? { color: primaryColor } : { color: 'black' }}>
+                        <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                      </div>
+                    </div>
+                    <div className="mt-8">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white line-clamp-2">
+                        {isKm && cat.nameKm ? cat.nameKm : cat.name}
+                      </h3>
                     </div>
                   </Link>
                 );

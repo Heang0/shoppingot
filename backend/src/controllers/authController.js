@@ -136,5 +136,60 @@ const telegramLogin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// @desc    Link Telegram to existing user account
+// @route   PUT /api/auth/telegram/link
+// @access  Private
+const linkTelegramAccount = async (req, res) => {
+  const data = req.body;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
-export { authUser, registerUser, telegramLogin };
+  if (!botToken) {
+    return res.status(500).json({ message: 'Server not configured for Telegram Login' });
+  }
+
+  // 1. Verify Hash
+  const { hash, ...userData } = data;
+  const dataCheckArr = [];
+  for (const key in userData) {
+    if (userData[key] !== undefined && userData[key] !== null) {
+      dataCheckArr.push(`${key}=${userData[key]}`);
+    }
+  }
+  dataCheckArr.sort();
+  const dataCheckString = dataCheckArr.join('\n');
+
+  const secretKey = crypto.createHash('sha256').update(botToken).digest();
+  const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+  if (calculatedHash !== hash) {
+    return res.status(401).json({ message: 'Invalid Telegram authentication' });
+  }
+
+  // 2. Check if auth_date is too old (e.g., older than 24 hours)
+  const now = Math.floor(Date.now() / 1000);
+  if (now - data.auth_date > 86400) {
+    return res.status(401).json({ message: 'Authentication data expired' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if telegramId is already linked to another account
+    const existingLink = await User.findOne({ telegramId: data.id.toString(), _id: { $ne: req.user._id } });
+    if (existingLink) {
+      return res.status(400).json({ message: 'This Telegram account is already linked to another user' });
+    }
+
+    user.telegramId = data.id.toString();
+    await user.save();
+
+    res.json({ message: 'Telegram account linked successfully', telegramId: user.telegramId });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { authUser, registerUser, telegramLogin, linkTelegramAccount };

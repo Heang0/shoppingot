@@ -61,6 +61,9 @@ const storeSchema = new mongoose.Schema(
       freeDeliveryThreshold: { type: Number, default: 0 },
       isFreeDeliveryEnabled: { type: Boolean, default: false },
     },
+    telegramGroupId: {
+      type: String,
+    },
     isActive: {
       type: Boolean,
       default: true,

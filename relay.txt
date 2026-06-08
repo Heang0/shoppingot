@@ -1,0 +1,1 @@
+"Hey! I just bought a new Bakong Relay API token and put it in my backend .env file as BAKONG_RELAY_TOKEN. Please update the verifyKHQRTransaction function in backend/src/services/bakongService.js to stop using the official Bakong API, and switch it back to using fetch('https://api.bakongrelay.com/v1/check_transaction_by_md5') with the Relay Token."

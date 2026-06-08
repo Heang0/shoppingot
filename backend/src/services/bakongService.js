@@ -85,14 +85,14 @@ export const verifyKHQRTransaction = async (md5Hash) => {
     };
   }
 
-  const token = process.env.BAKONG_RELAY_TOKEN;
+  const token = process.env.BAKONG_TOKEN;
   if (!token) {
-    console.error('BAKONG_RELAY_TOKEN missing');
+    console.error('BAKONG_TOKEN missing');
     return { status: 1, message: 'Missing Token' };
   }
 
   try {
-    const res = await fetch('https://api.bakongrelay.com/v1/check_transaction_by_md5', {
+    const res = await fetch('https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -102,13 +102,15 @@ export const verifyKHQRTransaction = async (md5Hash) => {
     });
 
     const data = await res.json();
+    console.log('[BAKONG CHECK API RESPONSE]:', JSON.stringify(data, null, 2));
 
-    if (res.status === 401 || (data.responseCode === 1 && data.responseMessage?.includes('Unauthorized'))) {
+    if (res.status === 401 || data.responseCode == 401 || data.responseCode == 403 || data.code == 401) {
       console.error('BAKONG_TOKEN_INVALID');
       return { status: 1, message: 'Invalid Token' };
     }
 
-    if (data.responseCode === 0) {
+    // Check if it's successful (responseCode 0 or if the transaction data object is present and has an amount)
+    if (data.responseCode == 0 || data.code == 0 || (data.data && data.data.amount) || data.amount) {
       return { status: 0, message: 'Transaction Successful' };
     }
 

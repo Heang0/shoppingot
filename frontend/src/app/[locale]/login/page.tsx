@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const t = useTranslations('Index');
   const router = useRouter();
+  const params = useParams();
+  const isKm = params?.locale === 'km';
   const setUser = useAuthStore((state) => state.setUser);
   
   const [email, setEmail] = useState('');
@@ -116,7 +118,10 @@ export default function LoginPage() {
           </form>
             
           <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6 mb-6">
-            By logging in, you agree to ShoppingOT's Terms of Service and Privacy Policy.
+            {isKm 
+              ? <>តាមរយៈការចូលប្រើ អ្នកយល់ព្រមនឹង <Link href="#" className="text-[#E84C3D] hover:underline">លក្ខខណ្ឌសេវាកម្ម</Link> និង <Link href="#" className="text-[#E84C3D] hover:underline">គោលការណ៍ឯកជនភាព</Link> របស់ ShoppingOT។</>
+              : <>By logging in, you agree to ShoppingOT's <Link href="#" className="text-[#E84C3D] hover:underline">Terms of Service</Link> and <Link href="#" className="text-[#E84C3D] hover:underline">Privacy Policy</Link>.</>
+            }
           </p>
 
           <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-6">

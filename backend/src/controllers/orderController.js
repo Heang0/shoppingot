@@ -145,6 +145,7 @@ const verifyOrderPayment = async (req, res) => {
 
     if (verificationResult.status === 0) {
       order.paymentStatus = 'PAID';
+      order.orderStatus = 'PROCESSING';
       await order.save();
 
       // Deduct stock when paid
@@ -152,26 +153,43 @@ const verifyOrderPayment = async (req, res) => {
         await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
       }
 
-      // [PHASE 3] Dispatch Telegram Notification to Merchant
-      // If TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are in .env, send a real message
-      if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-        try {
-          const message = `🛍️ New Order Paid!\nOrder ID: ${order._id}\nTotal: $${order.totalAmount.toFixed(2)}`;
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: process.env.TELEGRAM_CHAT_ID,
-              text: message,
-            }),
+      // [PHASE 3] Dispatch Telegram Notification to Merchant Group
+      try {
+        const store = await Store.findById(order.storeId);
+        const telegramChatId = store?.telegramGroupId;
+        
+          let itemsList = '';
+          order.items.forEach(item => {
+            itemsList += `- ${item.quantity}x ${item.productId ? 'Product' : 'Item'}\n`;
           });
-          console.log('Telegram notification sent to merchant');
-        } catch (err) {
-          console.error('Failed to send Telegram notification', err);
+          
+          const customerName = order.isGuest ? order.guestInfo?.name : order.customerId?.name || 'Unknown';
+          const customerPhone = order.isGuest ? order.guestInfo?.phone : 'No Phone';
+          const address = order.isGuest ? order.guestInfo?.address : 'No Address';
+
+          const message = `🛍️ *New Order Paid! (ការបញ្ជាទិញថ្មីត្រូវបានទូទាត់!)*
+          
+*Order ID:* \`${order._id}\`
+*Customer:* ${customerName}
+*Phone:* ${customerPhone}
+*Address:* ${address}
+*Delivery:* ${order.deliveryPartner || 'Standard'}
+
+*Items:*
+${itemsList}
+*Total:* *$${order.totalAmount.toFixed(2)}*`;
+          // Import dynamically or we could import it at the top
+          const { sendTelegramNotification } = await import('../services/telegramBot.js');
+          await sendTelegramNotification(telegramChatId, message);
+          
+          console.log(`Telegram notification sent to merchant group (${telegramChatId})`);
+        } else {
+          console.log(`[MOCK TELEGRAM] 🛍️ New Order Paid! (No telegramGroupId linked or no token) for store ${store?.name}`);
         }
-      } else {
-        console.log('[MOCK TELEGRAM] 🛍️ New Order Paid!', order._id);
+      } catch (err) {
+        console.error('Failed to send Telegram notification', err);
       }
+
       return res.json({ status: 'PAID' });
     }
 
@@ -268,11 +286,45 @@ const simulateOrderPayment = async (req, res) => {
     if (!order) return res.status(404).json({ message: 'Order not found' });
     
     order.paymentStatus = 'PAID';
+    order.orderStatus = 'PROCESSING';
     await order.save();
     
     // Deduct stock when simulated
     for (const item of order.items) {
       await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
+    }
+
+    // [PHASE 3] Dispatch Telegram Notification to Merchant Group (for DEV Simulation)
+    try {
+      const store = await Store.findById(order.storeId);
+      const telegramChatId = store?.telegramGroupId;
+      
+      if (telegramChatId && process.env.TELEGRAM_BOT_TOKEN) {
+        let itemsList = '';
+        order.items.forEach(item => {
+          itemsList += `- ${item.quantity}x ${item.productId ? 'Product' : 'Item'}\n`;
+        });
+        
+        const customerName = order.isGuest ? order.guestInfo?.name : order.customerId?.name || 'Unknown';
+        const customerPhone = order.isGuest ? order.guestInfo?.phone : 'No Phone';
+        const address = order.isGuest ? order.guestInfo?.address : 'No Address';
+
+        const message = `🛍️ *[TEST] New Order Paid! (ការបញ្ជាទិញថ្មីត្រូវបានទូទាត់!)*
+        
+*Order ID:* \`${order._id}\`
+*Customer:* ${customerName}
+*Phone:* ${customerPhone}
+*Address:* ${address}
+*Delivery:* ${order.deliveryPartner || 'Standard'}
+
+*Items:*
+${itemsList}
+*Total:* *$${order.totalAmount.toFixed(2)}*`;
+        const { sendTelegramNotification } = await import('../services/telegramBot.js');
+        await sendTelegramNotification(telegramChatId, message);
+      }
+    } catch (err) {
+      console.error('Failed to send Telegram notification', err);
     }
     
     res.json({ message: 'Simulated payment success' });

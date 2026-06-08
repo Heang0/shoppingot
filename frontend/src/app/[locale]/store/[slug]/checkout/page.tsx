@@ -77,9 +77,9 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   };
 
   const deliveryOptions = [
-    { id: 'J&T Express', name: isKm ? 'ក្រុមហ៊ុន J&T Express' : 'J&T Express', logo: '/logo/J&T.webp', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 1.50 },
-    { id: 'VET Express', name: isKm ? 'វីរៈប៊ុនថាំអិចប្រេស - VET' : 'VET Express', logo: '/logo/VET.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 1.50 },
-    { id: 'Grab', name: isKm ? 'គ្រេប - Grab' : 'Grab', logo: '/logo/Grab.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់ក្នុងក្រុង - Delivery in City' : 'Delivery in City', fee: 1.50 },
+    { id: 'J&T Express', name: isKm ? 'ក្រុមហ៊ុន J&T Express' : 'J&T Express', logo: '/logo/J&T.webp', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 0 },
+    { id: 'VET Express', name: isKm ? 'វីរៈប៊ុនថាំអិចប្រេស - VET' : 'VET Express', logo: '/logo/VET.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់តាមខេត្ត - Delivery to Provinces' : 'Delivery to Provinces', fee: 0 },
+    { id: 'Grab', name: isKm ? 'គ្រេប - Grab' : 'Grab', logo: '/logo/Grab.png', desc: isKm ? 'សម្រាប់ឥវ៉ាន់ក្នុងក្រុង - Delivery in City' : 'Delivery in City', fee: 0 },
   ];
 
   const totalProduct = getTotalPrice();
@@ -266,6 +266,12 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
           sessionStorage.removeItem('pendingCartQR');
           clearCart();
           clearInterval(interval);
+          
+          // Auto-redirect after 3 seconds so the user doesn't have to click "Continue"
+          setTimeout(() => {
+            setQrData(null);
+            window.location.href = '/';
+          }, 3000);
         }
       } catch (error) {
         console.error('Polling error', error);

@@ -20,22 +20,28 @@ function AddToCartToast({ message, visible }: { message: string; visible: boolea
   );
 }
 
+// --- In-Memory Cache for SPA Navigation ---
+const productCache: Record<string, any> = {};
+
 export default function ProductDetailPage({ params }: { params: { slug: string, productSlug: string, locale: string } }) {
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const cacheKey = `${params.productSlug}-${params.slug}-${searchParams.get('theme') || ''}`;
+  const cached = productCache[cacheKey];
+
+  const [product, setProduct] = useState<any>(cached?.product || null);
+  const [loading, setLoading] = useState(!cached);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
-  const [themeStyle, setThemeStyle] = useState('default');
-  const [primaryColor, setPrimaryColor] = useState('#000000');
-  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [themeStyle, setThemeStyle] = useState(cached?.themeStyle || 'default');
+  const [primaryColor, setPrimaryColor] = useState(cached?.primaryColor || '#000000');
+  const [relatedProducts, setRelatedProducts] = useState<any[]>(cached?.relatedProducts || []);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const addItem = useCartStore((state) => state.addItem);
   const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isKm = params.locale === 'km';
   const text = {
     options: isKm ? 'ជម្រើស' : 'Options',
@@ -85,7 +91,22 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
             });
             
             // Limit to 4 for desktop view nicely
-            setRelatedProducts(related.slice(0, 4));
+            const relatedFinal = related.slice(0, 4);
+            setRelatedProducts(relatedFinal);
+
+            productCache[cacheKey] = {
+              product: data,
+              themeStyle: previewTheme || store.branding?.themeStyle || 'default',
+              primaryColor: store.branding?.primaryColor || '#000000',
+              relatedProducts: relatedFinal
+            };
+          } else {
+            productCache[cacheKey] = {
+              product: data,
+              themeStyle: previewTheme || store.branding?.themeStyle || 'default',
+              primaryColor: store.branding?.primaryColor || '#000000',
+              relatedProducts: []
+            };
           }
         }
       } catch (err) {
@@ -95,7 +116,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string, 
       }
     };
     fetchProductAndStore();
-  }, [params.productSlug, params.slug, searchParams]);
+  }, [params.productSlug, params.slug, searchParams, cacheKey]);
 
   const handleSelect = (variantName: string, option: string) => {
     setSelectedVariants(prev => ({ ...prev, [variantName]: option }));

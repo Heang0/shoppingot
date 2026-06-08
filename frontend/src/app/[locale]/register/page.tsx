@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import Link from 'next/link';
 
 export default function RegisterPage() {
   const t = useTranslations('Index');
   const router = useRouter();
+  const params = useParams();
+  const isKm = params?.locale === 'km';
   const setUser = useAuthStore((state) => state.setUser);
   
   const [name, setName] = useState('');
@@ -123,6 +125,13 @@ export default function RegisterPage() {
               </button>
             </div>
           </form>
+
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6 mb-6">
+            {isKm 
+              ? <>តាមរយៈការចុះឈ្មោះ អ្នកយល់ព្រមនឹង <Link href="#" className="text-[#E84C3D] hover:underline">លក្ខខណ្ឌសេវាកម្ម</Link> និង <Link href="#" className="text-[#E84C3D] hover:underline">គោលការណ៍ឯកជនភាព</Link> របស់ ShoppingOT។</>
+              : <>By registering, you agree to ShoppingOT's <Link href="#" className="text-[#E84C3D] hover:underline">Terms of Service</Link> and <Link href="#" className="text-[#E84C3D] hover:underline">Privacy Policy</Link>.</>
+            }
+          </p>
 
           <div className="mt-6">
             <div className="relative">

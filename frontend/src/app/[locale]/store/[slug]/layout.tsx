@@ -37,9 +37,18 @@ export default async function StorefrontLayout({
       <StoreTopNav storeName={store.name} storeLogo={store.branding?.logoUrl} primaryColor={primaryColor} slug={slug} locale={locale} initialThemeStyle={store.branding?.themeStyle || 'default'} />
 
       {/* Content Area */}
-      <main className="w-full bg-white dark:bg-black pb-20 md:pb-0">
+      <main className="w-full bg-white dark:bg-black pb-8 md:pb-12 min-h-[calc(100vh-180px)]">
         {children}
       </main>
+
+      {/* Powered By Footer */}
+      <footer className="w-full py-6 md:py-8 bg-[#F8F9FA] dark:bg-[#0A0A0A] text-center border-t border-gray-100 dark:border-gray-800 pb-28 md:pb-8 flex flex-col items-center justify-center">
+        <a href={process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors group">
+          <span>{locale === 'km' ? 'ដំណើរការដោយ' : 'Powered by'}</span>
+          <img src="/logo/logo-website.png" alt="ShoppingOT Logo" className="h-5 sm:h-6 object-contain grayscale group-hover:grayscale-0 transition-all duration-300 opacity-80 group-hover:opacity-100" />
+          <span className="font-bold tracking-tight text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">ShoppingOT</span>
+        </a>
+      </footer>
 
       {/* Bottom Navigation (Mobile Only) */}
       <StoreBottomNav locale={locale} primaryColor={primaryColor} slug={slug} initialThemeStyle={store.branding?.themeStyle || 'default'} />

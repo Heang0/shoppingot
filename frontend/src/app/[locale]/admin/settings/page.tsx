@@ -6,6 +6,8 @@ import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
 import { User, Store as StoreIcon, Copy, Check, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+// @ts-ignore
+import TelegramLoginButton from 'react-telegram-login';
 
 interface Store {
   _id: string;
@@ -16,10 +18,20 @@ interface Store {
     bakongId?: string;
     currency?: string;
   };
+  deliverySettings?: {
+    isFreeDeliveryEnabled?: boolean;
+    freeDeliveryThreshold?: number;
+  };
+  plan?: {
+    planId?: {
+      name: string;
+    } | string;
+  };
   branding: {
     logoUrl?: string;
     bannerUrl?: string;
     primaryColor?: string;
+    themeStyle?: string;
   };
   contact?: {
     phone?: string;
@@ -76,6 +88,32 @@ export default function AdminSettings() {
   
   const [profileUploaded, setProfileUploaded] = useState(false);
   const [logoUploaded, setLogoUploaded] = useState(false);
+
+  const handleTelegramResponse = async (response: any) => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:5000/api/auth/telegram/link', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`
+        },
+        body: JSON.stringify(response)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccessMsg('Telegram Account Linked Successfully! You will now receive order notifications.');
+      } else {
+        alert(data.message || 'Failed to link Telegram');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error linking Telegram account');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setSuccessMsg(''), 3000);
+    }
+  };
 
   const handleCopyUrl = () => {
     if (!storeData) return;
@@ -240,7 +278,7 @@ export default function AdminSettings() {
     }
   };
 
-  const isFreePlan = storeData && (!storeData.plan?.planId || storeData.plan?.planId?.name === 'Free' || typeof storeData.plan?.planId === 'string');
+  const isFreePlan = Boolean(storeData && (!storeData.plan?.planId || (storeData.plan?.planId as any)?.name === 'Free' || typeof storeData.plan?.planId === 'string'));
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -332,6 +370,40 @@ export default function AdminSettings() {
                 onChange={(e) => setProfileData({ ...profileData, password: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
               />
+            </div>
+
+            <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('order_notifications')}</h3>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-6 rounded-xl space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.94z"/></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Telegram Group Notifications (ការជូនដំណឹងតាម Telegram)</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Get real-time order alerts for your team by connecting a Telegram Group.<br/>
+                      <span className="font-khmer text-xs">ទទួលបានការជូនដំណឹងភ្លាមៗនៅពេលមានការបញ្ជាទិញថ្មី ដោយភ្ជាប់ទៅកាន់ Telegram Group របស់អ្នក។</span>
+                    </p>
+                    
+                    {storeData ? (
+                      <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                        <li>Create a Telegram Group for your store. <span className="font-khmer text-gray-500 text-xs">(បង្កើត Telegram Group សម្រាប់ហាងរបស់អ្នក)</span></li>
+                        <li>Add the bot <span className="font-mono bg-white dark:bg-black px-2 py-1 rounded text-blue-600 dark:text-blue-400">@{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'shoppingot_bot'}</span> to the group. <span className="font-khmer text-gray-500 text-xs">(បញ្ចូល bot នេះទៅក្នុង Group)</span></li>
+                        <li>Send this exact message in the group chat: <span className="font-khmer text-gray-500 text-xs">(ផ្ញើសារខាងក្រោមនេះទៅក្នុង Group៖)</span></li>
+                        <div className="flex items-center gap-2 mt-2 ml-4">
+                          <code className="bg-white dark:bg-black px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-gray-900 dark:text-gray-100 select-all">
+                            /link {storeData._id}
+                          </code>
+                        </div>
+                      </ol>
+                    ) : (
+                      <p className="text-sm text-yellow-600 dark:text-yellow-500">Please set up your store below first to get your pairing code.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center space-x-4">
