@@ -117,7 +117,12 @@ export default function AdminSettings() {
 
   const handleCopyUrl = () => {
     if (!storeData) return;
-    const url = `http://${storeData.slug}${baseDomain}`;
+    const isVercel = baseDomain.includes('vercel.app');
+    const locale = window.location.pathname.split('/')[1] || 'km';
+    const url = isVercel 
+      ? `https://shoppingot.vercel.app/${locale}/store/${storeData.slug}` 
+      : `http://${storeData.slug}${baseDomain}`;
+      
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -466,18 +471,12 @@ export default function AdminSettings() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_full_url')}</label>
                 <div className="flex">
-                  <span className="inline-flex items-center px-4 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                    http://
-                  </span>
                   <input
                     type="text"
                     readOnly
-                    value={storeData.slug}
-                    className="flex-1 px-4 py-3 border-y border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 outline-none cursor-not-allowed"
+                    value={baseDomain.includes('vercel.app') ? `https://shoppingot.vercel.app/km/store/${storeData.slug}` : `http://${storeData.slug}${baseDomain}`}
+                    className="flex-1 px-4 py-3 border border-r-0 rounded-l-lg border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 outline-none cursor-not-allowed"
                   />
-                  <span className="inline-flex items-center px-4 border border-l-0 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                    {baseDomain}
-                  </span>
                   <button 
                     type="button" 
                     onClick={handleCopyUrl}
