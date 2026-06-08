@@ -35,3 +35,10 @@ git remote add origin git@github-heang0:Heang0/YOUR-NEW-PROJECT-NAME.git
 
 # 6. Upload the code for the first time
 git push -u origin main
+
+
+
+
+git add .
+git commit -m "Configure frontend for production deployment"
+git push
