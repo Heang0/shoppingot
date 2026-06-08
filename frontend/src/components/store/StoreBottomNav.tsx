@@ -58,7 +58,14 @@ export default function StoreBottomNav({ locale, primaryColor, slug, initialThem
 
   const t = (en: string, km: string) => locale === 'km' ? km : en;
 
-  const navItems = [
+  const navItems: {
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    icon: any;
+    isActive: boolean;
+    badge?: number;
+  }[] = [
     {
       label: t('Home', 'ទំព័រដើម'),
       href: homeHref,

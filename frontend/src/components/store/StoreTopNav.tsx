@@ -13,6 +13,8 @@ import { useFavoritesStore } from '@/lib/store/useFavoritesStore';
 interface Category {
   _id: string;
   name: string;
+  slug: string;
+  nameKm?: string;
 }
 
 export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, locale, initialThemeStyle }: {

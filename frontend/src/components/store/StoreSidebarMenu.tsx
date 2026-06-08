@@ -10,6 +10,8 @@ import { useFavoritesStore } from '@/lib/store/useFavoritesStore';
 interface Category {
   _id: string;
   name: string;
+  slug: string;
+  nameKm?: string;
 }
 
 export default function StoreSidebarMenu({
@@ -159,7 +161,7 @@ export default function StoreSidebarMenu({
                       className={`py-2.5 px-1 text-sm sm:text-base font-semibold transition-colors border-b border-gray-50 dark:border-gray-900 last:border-0 break-words ${isCatActive ? '' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                       style={isCatActive ? { color: primaryColor || '#000' } : undefined}
                     >
-                      {locale === 'km' && (cat as any).nameKm ? (cat as any).nameKm : cat.name}
+                      {locale === 'km' && cat.nameKm ? cat.nameKm : cat.name}
                     </Link>
                   );
                 })}
