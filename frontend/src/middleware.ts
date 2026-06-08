@@ -28,7 +28,7 @@ export default function middleware(req: NextRequest) {
   }
 
   // 3. Rewrite requests for subdomains to the /store/[slug] route
-  if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'admin') {
+  if (subdomain && subdomain !== 'www' && subdomain !== 'app' && subdomain !== 'admin' && subdomain !== 'shoppingot') {
     // Only rewrite if it's not a redirect from next-intl (status 307/308)
     if (response.status === 200) {
       // next-intl might have rewritten the request internally, check x-middleware-rewrite
