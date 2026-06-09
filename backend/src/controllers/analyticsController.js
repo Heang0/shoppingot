@@ -71,7 +71,9 @@ export const getStoreAnalytics = async (req, res) => {
       totalOrders,
       totalProducts,
       recentOrders,
-      chartData
+      chartData,
+      plan: store.plan,
+      isActive: store.isActive
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

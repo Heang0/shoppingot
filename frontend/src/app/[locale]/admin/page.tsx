@@ -51,6 +51,43 @@ export default function AdminDashboard() {
         <p className="text-gray-500 dark:text-gray-400">{t('loading_analytics')}</p>
       ) : analytics ? (
         <>
+          {/* Plan Status Warning Banners */}
+          {!analytics.isActive && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 p-4 rounded-xl flex items-center justify-between mb-6 shadow-sm">
+              <div>
+                <h4 className="text-red-800 dark:text-red-400 font-bold">Store Suspended</h4>
+                <p className="text-sm text-red-600 dark:text-red-300 mt-1">Your store is currently suspended by the superadmin. Customers cannot access your storefront.</p>
+              </div>
+              <Link href="/admin/upgrade" className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-sm whitespace-nowrap ml-4">
+                Upgrade Plan
+              </Link>
+            </div>
+          )}
+          
+          {analytics.isActive && analytics.plan?.expiresAt && new Date(analytics.plan.expiresAt) < new Date() && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 p-4 rounded-xl flex items-center justify-between mb-6 shadow-sm">
+              <div>
+                <h4 className="text-yellow-800 dark:text-yellow-400 font-bold">Plan Expired</h4>
+                <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-1">Your subscription plan has expired. Please renew your plan to prevent your store from being suspended.</p>
+              </div>
+              <Link href="/admin/upgrade" className="px-4 py-2 bg-yellow-600 text-white text-sm font-semibold rounded-lg hover:bg-yellow-700 transition-colors shadow-sm whitespace-nowrap ml-4">
+                Renew Now
+              </Link>
+            </div>
+          )}
+
+          {analytics.isActive && analytics.plan?.expiresAt && new Date(analytics.plan.expiresAt) > new Date() && new Date(analytics.plan.expiresAt) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-4 rounded-xl flex items-center justify-between mb-6 shadow-sm">
+              <div>
+                <h4 className="text-blue-800 dark:text-blue-400 font-bold">Plan Expiring Soon</h4>
+                <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">Your subscription plan expires on {new Date(analytics.plan.expiresAt).toLocaleDateString()}. Renew early to avoid interruption.</p>
+              </div>
+              <Link href="/admin/upgrade" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap ml-4">
+                Renew Now
+              </Link>
+            </div>
+          )}
+
           {/* Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-[#111111] rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
