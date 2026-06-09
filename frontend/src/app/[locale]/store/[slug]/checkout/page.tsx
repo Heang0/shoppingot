@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
 import Link from 'next/link';
@@ -246,8 +246,18 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     }
   };
 
+  const pollIntervalRef = useRef<any>(null);
+
+  const clearPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
   const pollPaymentStatus = (orderId: string, md5: string) => {
-    const interval = setInterval(async () => {
+    clearPolling();
+    pollIntervalRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/${orderId}/verify`, {
           method: 'POST',
@@ -257,7 +267,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
         const data = await res.json();
         if (data.status === 'PAID') {
           setPaymentStatus('PAID');
-          clearInterval(interval);
+          clearPolling();
           // Do NOT clear cart or sessionStorage here — that would redirect away
           // before the success modal is visible. Cleanup is done in onSuccessClose.
         }
@@ -267,7 +277,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
     }, 3000);
 
     setTimeout(() => {
-      clearInterval(interval);
+      clearPolling();
       setPaymentStatus((current) => {
         if (current === 'PENDING') {
           sessionStorage.removeItem('pendingCartQR');
@@ -600,8 +610,8 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
           merchantName={store?.name || "ShoppingOT Merchant"}
           isPaid={paymentStatus === 'PAID'}
           locale={params.locale}
-          onClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); }}
-          onSuccessClose={() => { setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); window.location.href = `/${params.locale}/store/${params.slug}/orders/${qrData.orderId}`; }}
+          onClose={() => { clearPolling(); setQrData(null); sessionStorage.removeItem('pendingCartQR'); }}
+          onSuccessClose={() => { clearPolling(); setQrData(null); sessionStorage.removeItem('pendingCartQR'); clearCart(); window.location.href = `/${params.locale}/store/${params.slug}/orders/${qrData.orderId}`; }}
           onSimulatePay={handleSimulatePay}
         />
       )}

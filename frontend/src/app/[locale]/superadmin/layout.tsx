@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { LayoutDashboard, Store, Tag, Settings } from 'lucide-react';
+import { LayoutDashboard, Store, Tag, Settings, Users } from 'lucide-react';
 
 export default function SuperadminLayout({
   children,
@@ -40,6 +40,7 @@ export default function SuperadminLayout({
 
   const sidebarItems = [
     { label: 'Dashboard', href: '/superadmin', icon: <LayoutDashboard size={20} /> },
+    { label: 'Users', href: '/superadmin/users', icon: <Users size={20} /> },
     { label: 'Manage Plans', href: '/superadmin/plans', icon: <Tag size={20} /> },
     { label: 'Stores & Subscriptions', href: '/superadmin/stores', icon: <Store size={20} /> },
     { label: 'Settings', href: '/superadmin/settings', icon: <Settings size={20} /> },

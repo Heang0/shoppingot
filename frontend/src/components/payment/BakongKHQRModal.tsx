@@ -94,11 +94,11 @@ export default function BakongKHQRModal({
             {/* Text Alignment Left strictly enforced */}
             <div className="text-left w-full mb-auto">
               <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1" style={isKm ? khmerFont : numFont}>{text.scanQR}</div>
+              <div className="text-[#000000] text-[14px] font-normal mb-1 truncate" style={isKm ? khmerFont : numFont}>{merchantName}</div>
               <div className="flex items-baseline gap-1">
                 <span className="text-[#000000] text-[31px] font-bold leading-none tracking-[0px]" style={numFont}>{amount.toFixed(2)}</span>
                 <span className="text-[#000000] text-[14px] font-normal leading-none tracking-[0px]" style={numFont}>{currency}</span>
               </div>
-              <div className="text-[#000000] text-[14px] font-normal mt-2 truncate" style={isKm ? khmerFont : numFont}>{merchantName}</div>
             </div>
 
             {/* Dashed Line Separator */}

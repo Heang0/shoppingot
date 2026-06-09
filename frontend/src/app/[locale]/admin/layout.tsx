@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle, Monitor, Layers, Tags } from 'lucide-react';
+import { LayoutDashboard, Settings, Package, ShoppingCart, ArrowUpCircle, Monitor, Layers, Tags, Users } from 'lucide-react';
 
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -45,6 +45,7 @@ export default function StoreAdminLayout({
 
   const sidebarItems = [
     { label: t('dashboard'), href: '/admin', icon: <LayoutDashboard size={20} /> },
+    { label: locale === 'km' ? 'អតិថិជន' : 'Customers', href: '/admin/customers', icon: <Users size={20} /> },
     { label: t('categories'), href: '/admin/categories', icon: <Layers size={20} /> },
     { label: t('manage_products'), href: '/admin/products', icon: <Package size={20} /> },
     { label: locale === 'km' ? 'ប្រូម៉ូសិន' : 'Promotions', href: '/admin/promotions', icon: <Tags size={20} /> },

@@ -1,4 +1,5 @@
 import Store from '../models/Store.js';
+import Order from '../models/Order.js';
 
 // @desc    Get all stores (Superadmin) or User's stores (Store Admin)
 // @route   GET /api/stores
@@ -172,4 +173,64 @@ const getStoreBySlug = async (req, res) => {
   }
 };
 
-export { getStores, createStore, updateStore, updatePaymentSettings, getStoreBySlug };
+// @desc    Get store customers based on orders
+// @route   GET /api/stores/:id/customers
+// @access  Private (Admin)
+const getStoreCustomers = async (req, res) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store || (store.ownerId.toString() !== req.user._id.toString() && req.user.role !== 'superadmin')) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Aggregate orders to get unique customers
+    const orders = await Order.find({ storeId: req.params.id }).populate('customerId', 'name email phone profilePic createdAt');
+    
+    const customerMap = new Map();
+
+    orders.forEach(order => {
+      let key, name, email, phone, isGuest, joinedAt;
+
+      if (order.customerId) {
+        key = order.customerId._id.toString();
+        name = order.customerId.name;
+        email = order.customerId.email;
+        phone = order.customerId.phone || order.guestInfo?.phone; // fallback to guest phone if needed
+        isGuest = false;
+        joinedAt = order.customerId.createdAt;
+      } else {
+        // Guest customer
+        key = order.guestInfo?.phone || order.guestInfo?.name || `guest-${order._id}`;
+        name = order.guestInfo?.name || 'Guest Customer';
+        email = '';
+        phone = order.guestInfo?.phone || '';
+        isGuest = true;
+        joinedAt = order.createdAt;
+      }
+
+      if (customerMap.has(key)) {
+        const existing = customerMap.get(key);
+        existing.totalOrders += 1;
+        existing.totalSpent += order.totalAmount;
+      } else {
+        customerMap.set(key, {
+          id: key,
+          name,
+          email,
+          phone,
+          isGuest,
+          joinedAt,
+          totalOrders: 1,
+          totalSpent: order.totalAmount
+        });
+      }
+    });
+
+    const customers = Array.from(customerMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+    res.json(customers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getStores, createStore, updateStore, updatePaymentSettings, getStoreBySlug, getStoreCustomers };

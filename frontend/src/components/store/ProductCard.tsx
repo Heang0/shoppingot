@@ -4,7 +4,7 @@ import { useCartStore } from '@/lib/store/useCartStore';
 import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
 import { ShoppingCart, Heart } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { usePathname, useParams, useRouter } from 'next/navigation';
 
 export default function ProductCard({ 
   product, 
@@ -21,10 +21,15 @@ export default function ProductCard({
 }) {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const addItem = useCartStore(state => state.addItem);
   const setDrawerOpen = useCartStore(state => state.setDrawerOpen);
   const user = useCustomerAuthStore(state => state.customerInfo);
   const setCustomerInfo = useCustomerAuthStore(state => state.setCustomerInfo);
+
+  // Check if we are testing on the main domain (e.g. shoppingot.vercel.app/store/slug)
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting && params.slug ? `/${params.locale}/store/${params.slug}` : `/${params.locale}`;
 
   const isFavorite = user?.favorites?.some(f => 
     typeof f === 'string' ? f === product._id : f?._id === product._id
@@ -36,7 +41,7 @@ export default function ProductCard({
 
     // If product has variants, force user to go to product details page to select them
     if (product.variants && product.variants.length > 0) {
-      router.push(`/${params.locale}/product/${product.slug || product._id}`);
+      router.push(`${basePath}/product/${product.slug || product._id}`);
       return;
     }
 
@@ -94,7 +99,7 @@ export default function ProductCard({
   }
 
   return (
-    <Link href={`/${params.locale}/product/${product.slug || product._id}`} className={cardBaseClass}>
+    <Link href={`${basePath}/product/${product.slug || product._id}`} className={cardBaseClass}>
       <div className={imageContainerClass}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img 

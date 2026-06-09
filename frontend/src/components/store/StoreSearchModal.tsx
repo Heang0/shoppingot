@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Search } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname, useParams } from 'next/navigation';
 
 interface Product {
   _id: string;
@@ -17,6 +18,11 @@ export default function StoreSearchModal({ isOpen, onClose, slug, locale, primar
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+  const params = useParams();
+
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting && params?.slug ? `/${locale}/store/${params.slug}` : `/${locale}`;
 
   useEffect(() => {
     if (isOpen) {
@@ -92,7 +98,7 @@ export default function StoreSearchModal({ isOpen, onClose, slug, locale, primar
               {filteredProducts.map(product => (
                 <Link 
                   key={product._id} 
-                  href={`/${locale}/product/${product.slug || product._id}`}
+                  href={`${basePath}/product/${product.slug || product._id}`}
                   onClick={onClose}
                   className="flex items-center gap-4 group hover:bg-gray-50 dark:hover:bg-gray-800/80 p-2 -mx-2 rounded-xl transition-colors"
                 >

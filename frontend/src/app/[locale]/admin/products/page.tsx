@@ -247,7 +247,7 @@ export default function ManageProducts() {
       }
 
       setShowForm(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('dashboard-main')?.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useTranslations, useLocale } from 'next-intl';
 import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
@@ -146,8 +146,18 @@ export default function UpgradePlan() {
     }
   };
 
+  const pollIntervalRef = useRef<any>(null);
+
+  const clearPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
   const pollPaymentStatus = (paymentId: string, md5: string) => {
-    const interval = setInterval(async () => {
+    clearPolling();
+    pollIntervalRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/subscription/verify`, {
           method: 'POST',
@@ -167,7 +177,7 @@ export default function UpgradePlan() {
           if (data.store) {
             setCurrentPlanId(data.store.plan?.planId);
           }
-          clearInterval(interval);
+          clearPolling();
         }
       } catch (error) {
         console.error('Polling error', error);
@@ -176,7 +186,7 @@ export default function UpgradePlan() {
 
     // Clear after 5 minutes to prevent infinite polling
     setTimeout(() => {
-      clearInterval(interval);
+      clearPolling();
       if (paymentStatus === 'PENDING') {
         setPaymentStatus('FAILED'); // Or timeout
         sessionStorage.removeItem('pendingUpgradeQR');
@@ -443,8 +453,8 @@ export default function UpgradePlan() {
           merchantName="ShoppingOT Superadmin"
           isPaid={paymentStatus === 'PAID'}
           locale={locale}
-          onClose={() => { setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); }}
-          onSuccessClose={() => { setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); window.location.reload(); }}
+          onClose={() => { clearPolling(); setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); }}
+          onSuccessClose={() => { clearPolling(); setQrData(null); setSelectedPlanId(null); sessionStorage.removeItem('pendingUpgradeQR'); sessionStorage.removeItem('pendingUpgradePlanId'); window.location.reload(); }}
           onSimulatePay={handleSimulatePay}
         />
       )}

@@ -5,6 +5,7 @@ import {
   updateStore,
   updatePaymentSettings,
   getStoreBySlug,
+  getStoreCustomers
 } from '../controllers/storeController.js';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,9 @@ router.route('/')
 
 router.route('/:id')
   .put(protect, updateStore);
+
+router.route('/:id/customers')
+  .get(protect, getStoreCustomers);
 
 router.route('/:id/payment-settings')
   .put(protect, updatePaymentSettings);

@@ -1,8 +1,18 @@
 import Store from '../models/Store.js';
-import Order from '../models/Order.js'; // Assuming we want to calculate revenue from orders? Wait, subscription revenue.
-// We don't have a Subscription model tracking payments natively yet? The Store model has `plan.isActive`.
-// For dashboard stats, we'll calculate basic metrics.
+import Order from '../models/Order.js'; 
+import User from '../models/User.js';
 
+// @desc    Get all users for platform management
+// @route   GET /api/superadmin/users
+// @access  Private/Superadmin
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Get dashboard stats
 // @route   GET /api/superadmin/dashboard
 // @access  Private/Superadmin

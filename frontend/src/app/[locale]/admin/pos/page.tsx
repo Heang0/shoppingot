@@ -203,8 +203,18 @@ export default function POSPage() {
     setIsCheckingOut(false);
   };
 
+  const pollIntervalRef = useRef<any>(null);
+
+  const clearPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
   const pollPaymentStatus = (orderId: string, md5: string) => {
-    const interval = setInterval(async () => {
+    clearPolling();
+    pollIntervalRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/${orderId}/verify`, {
           method: 'POST',
@@ -213,7 +223,7 @@ export default function POSPage() {
         });
         const data = await res.json();
         if (data.status === 'PAID') {
-          clearInterval(interval);
+          clearPolling();
           setQrData(null);
           setLastOrder({ orderId, items: [...cart], totalAmount, paymentMethod: 'KHQR', date: new Date() });
           setCart([]);
@@ -225,7 +235,7 @@ export default function POSPage() {
     }, 3000);
 
     // Stop polling if user closes QR (handled elsewhere) or after 5 mins
-    setTimeout(() => clearInterval(interval), 300000);
+    setTimeout(() => clearPolling(), 300000);
   };
 
   const getProductName = (p: Product) => locale === 'km' && p.titleKm ? p.titleKm : p.title;
@@ -365,7 +375,7 @@ export default function POSPage() {
             <img src={qrData.qrString} alt="KHQR" className="w-full h-auto mb-4 rounded-lg" />
             <p className="text-xl font-bold text-[#E84C3D] mb-4">${qrData.totalAmount.toFixed(2)}</p>
             <p className="text-sm text-gray-500 mb-6">Awaiting payment confirmation...</p>
-            <button onClick={() => setQrData(null)} className="text-gray-500 hover:text-gray-800">Cancel</button>
+            <button onClick={() => { setQrData(null); clearPolling(); }} className="text-gray-500 hover:text-gray-800">Cancel</button>
           </div>
         </div>
       )}

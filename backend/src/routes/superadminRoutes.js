@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
-import { getDashboardStats, toggleStoreStatus } from '../controllers/superadminController.js';
+import { getDashboardStats, toggleStoreStatus, getAllUsers } from '../controllers/superadminController.js';
 
 const router = express.Router();
 
@@ -9,5 +9,8 @@ router.route('/dashboard')
 
 router.route('/stores/:id/toggle')
   .put(protect, authorize('superadmin'), toggleStoreStatus);
+
+router.route('/users')
+  .get(protect, authorize('superadmin'), getAllUsers);
 
 export default router;
