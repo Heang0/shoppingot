@@ -3,7 +3,7 @@
 import { useCartStore } from '@/lib/store/useCartStore';
 import { X, Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function CartDrawer({
@@ -15,7 +15,11 @@ export default function CartDrawer({
 }) {
   const { items, isDrawerOpen, setDrawerOpen, removeItem, updateQuantity, getTotalPrice } = useCartStore();
   const params = useParams();
+  const pathname = usePathname();
   const isKm = params.locale === 'km';
+
+  const isPathRouting = pathname?.includes('/store/');
+  const checkoutHref = isPathRouting ? `/${params.locale}/store/${params.slug}/checkout` : `/${params.locale}/checkout`;
 
   // Prevent scroll when drawer is open
   useEffect(() => {
@@ -155,7 +159,7 @@ export default function CartDrawer({
               </span>
             </div>
             <Link 
-              href={`/${params.locale}/checkout`}
+              href={checkoutHref}
               onClick={() => setDrawerOpen(false)}
               className={`w-full py-4 text-lg font-bold text-white transition-all flex items-center justify-center gap-2 ${
                 themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest' :

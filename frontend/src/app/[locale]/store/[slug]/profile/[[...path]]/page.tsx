@@ -7,7 +7,7 @@ import StoreCustomerAuth from '@/components/store/StoreCustomerAuth';
 import StoreEditProfileModal from '@/components/store/StoreEditProfileModal';
 import BakongKHQRModal from '@/components/payment/BakongKHQRModal';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, Package, Clock, CheckCircle2, Truck, XCircle, AlertCircle, Camera, Edit2, Hash, Link2, Activity, CreditCard, Tag, Percent, MapPin, Calendar, FileText, RefreshCcw, X, Plus, Star, Heart } from 'lucide-react';
 import Select from 'react-select';
 
@@ -16,7 +16,11 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
   const setCustomerInfo = useCustomerAuthStore((state) => state.setCustomerInfo);
   const logout = useCustomerAuthStore((state) => state.logout);
   const router = useRouter();
+  const pathname = usePathname();
   const addItem = useCartStore((state) => state.addItem);
+
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting ? `/${params.locale}/store/${params.slug}` : `/${params.locale}`;
 
   const handleReorder = (order: any) => {
     order.items.forEach((item: any) => {
@@ -30,7 +34,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
         selectedVariants: item.selectedVariants || {}
       });
     });
-    router.push(`/${params.locale}/checkout`);
+    router.push(`${basePath}/checkout`);
   };
 
   const [loading, setLoading] = useState(true);
@@ -118,11 +122,11 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
   }, [params.path, orders]);
 
   const handleSelectOrder = (order: any) => {
-    router.push(`/${params.locale}/profile/order-history/${order._id}`);
+    router.push(`${basePath}/profile/order-history/${order._id}`);
   };
 
   const handleBackToOrders = () => {
-    router.push(`/${params.locale}/profile`);
+    router.push(`${basePath}/profile`);
   };
 
   const handleLogout = () => {

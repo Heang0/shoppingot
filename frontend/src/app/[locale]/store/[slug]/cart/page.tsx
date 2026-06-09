@@ -3,17 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
 export default function CartPage({ params }: { params: { slug: string, locale: string } }) {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  const isKm = params.locale === 'km';
+  const isPathRouting = pathname?.includes('/store/');
+  const basePath = isPathRouting ? `/${params.locale}/store/${params.slug}` : `/${params.locale}`;
+  
   const [mounted, setMounted] = useState(false);
   const [themeStyle, setThemeStyle] = useState('default');
   const [primaryColor, setPrimaryColor] = useState('#000000');
-  const searchParams = useSearchParams();
-  const isKm = params.locale === 'km';
   
   const text = {
     cartEmpty: isKm ? 'កន្ត្រកទំនេរ' : 'Cart is Empty',
@@ -109,7 +113,7 @@ export default function CartPage({ params }: { params: { slug: string, locale: s
           </div>
           
           <button 
-            onClick={() => router.push(`/${params.locale}/checkout`)}
+            onClick={() => router.push(`${basePath}/checkout`)}
             className={`w-full py-4 text-lg font-bold text-white transition-all flex items-center justify-center gap-2 ${
               themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none uppercase tracking-widest' :
               themeStyle === 'minimalist' ? 'rounded-sm tracking-widest uppercase hover:opacity-90' :
