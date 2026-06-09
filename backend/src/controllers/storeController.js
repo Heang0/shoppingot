@@ -108,7 +108,7 @@ const updatePaymentSettings = async (req, res) => {
 // @route   PUT /api/stores/:id
 // @access  Private (Store owner)
 const updateStore = async (req, res) => {
-  const { name, slug, category, branding, contact } = req.body;
+  const { name, slug, category, branding, contact, customDomain } = req.body;
 
   try {
     const store = await Store.findById(req.params.id);
@@ -121,6 +121,16 @@ const updateStore = async (req, res) => {
       if (slug && slug !== store.slug) {
         const slugExists = await Store.findOne({ slug });
         if (slugExists) return res.status(400).json({ message: 'Store slug already exists' });
+      }
+
+      if (customDomain !== undefined && customDomain !== store.customDomain) {
+        if (customDomain !== '') {
+          const domainExists = await Store.findOne({ customDomain });
+          if (domainExists) return res.status(400).json({ message: 'Custom domain already taken' });
+          store.customDomain = customDomain;
+        } else {
+          store.customDomain = undefined; // unset the domain
+        }
       }
 
       store.name = name || store.name;
@@ -233,4 +243,20 @@ const getStoreCustomers = async (req, res) => {
   }
 };
 
-export { getStores, createStore, updateStore, updatePaymentSettings, getStoreBySlug, getStoreCustomers };
+// @desc    Get store slug by custom domain
+// @route   GET /api/stores/domain/:domain
+// @access  Public
+const getStoreSlugByDomain = async (req, res) => {
+  try {
+    const store = await Store.findOne({ customDomain: req.params.domain }).select('slug');
+    if (store) {
+      res.json({ slug: store.slug });
+    } else {
+      res.status(404).json({ message: 'Store domain not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getStores, createStore, updateStore, updatePaymentSettings, getStoreBySlug, getStoreCustomers, getStoreSlugByDomain };

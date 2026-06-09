@@ -5,7 +5,8 @@ import {
   updateStore,
   updatePaymentSettings,
   getStoreBySlug,
-  getStoreCustomers
+  getStoreCustomers,
+  getStoreSlugByDomain
 } from '../controllers/storeController.js';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
 
@@ -14,6 +15,9 @@ const router = express.Router();
 router.route('/')
   .get(protect, getStores)
   .post(protect, createStore);
+
+router.route('/domain/:domain')
+  .get(getStoreSlugByDomain);
 
 router.route('/:id')
   .put(protect, updateStore);

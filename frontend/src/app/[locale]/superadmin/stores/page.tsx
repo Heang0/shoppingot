@@ -14,6 +14,7 @@ interface Store {
     expiresAt: string;
     isActive: boolean;
   };
+  customDomain?: string;
   isActive: boolean;
 }
 
@@ -22,6 +23,12 @@ export default function StoresManagement() {
   const baseDomain = useBaseDomain();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal State
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<{ id: string; domain: string; name: string } | null>(null);
+  const [domainInput, setDomainInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchStores();
@@ -58,6 +65,34 @@ export default function StoresManagement() {
     }
   };
 
+  const handleSaveDomain = async () => {
+    if (!selectedStore) return;
+    setIsSubmitting(true);
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/superadmin/stores/${selectedStore.id}/domain`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}` 
+        },
+        body: JSON.stringify({ customDomain: domainInput })
+      });
+      if (res.ok) {
+        fetchStores();
+        setIsDomainModalOpen(false);
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Failed to update domain');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center">
@@ -73,6 +108,7 @@ export default function StoresManagement() {
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Store Name</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Custom Domain</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Current Plan</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expiry</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
@@ -91,6 +127,13 @@ export default function StoresManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 font-medium">
                     {store.ownerId?.name}
                     <div className="text-xs text-gray-500 dark:text-gray-400 font-normal">{store.ownerId?.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {store.customDomain ? (
+                      <span className="text-blue-600 dark:text-blue-400 font-medium">{store.customDomain}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">None</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {store.plan?.planId?.name || 'No Plan'}
@@ -114,7 +157,17 @@ export default function StoresManagement() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
+                    <button
+                      onClick={() => {
+                        setSelectedStore({ id: store._id, domain: store.customDomain || '', name: store.name });
+                        setDomainInput(store.customDomain || '');
+                        setIsDomainModalOpen(true);
+                      }}
+                      className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 transition-colors font-semibold"
+                    >
+                      Edit Domain
+                    </button>
                     <button
                       onClick={() => toggleStore(store._id)}
                       className={`${store.isActive ? 'text-red-500 hover:text-red-700 dark:hover:text-red-400' : 'text-green-500 hover:text-green-700 dark:hover:text-green-400'} transition-colors font-semibold`}
@@ -126,13 +179,54 @@ export default function StoresManagement() {
               ))}
               {stores.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No stores registered yet.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {isDomainModalOpen && selectedStore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-md bg-white dark:bg-[#111111] p-6 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Edit Custom Domain</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Setting custom domain for <strong>{selectedStore.name}</strong>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domain Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. www.brand.com"
+                  value={domainInput}
+                  onChange={(e) => setDomainInput(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Leave empty to remove the custom domain.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setIsDomainModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveDomain}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-[#E84C3D] hover:bg-[#c0392b] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Domain'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

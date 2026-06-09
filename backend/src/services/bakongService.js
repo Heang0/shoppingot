@@ -85,14 +85,14 @@ export const verifyKHQRTransaction = async (md5Hash) => {
     };
   }
 
-  const token = process.env.BAKONG_TOKEN;
+  const token = process.env.BAKONG_RELAY_TOKEN;
   if (!token) {
-    console.error('BAKONG_TOKEN missing');
-    return { status: 1, message: 'Missing Token' };
+    console.error('BAKONG_RELAY_TOKEN missing');
+    return { status: 1, message: 'Missing Relay Token' };
   }
 
   try {
-    const res = await fetch('https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5', {
+    const res = await fetch('https://api.bakongrelay.com/v1/check_transaction_by_md5', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

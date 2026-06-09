@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
 import { useBaseDomain } from '@/lib/hooks/useBaseDomain';
 import { User, Store as StoreIcon, Copy, Check, Save } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 // @ts-ignore
 import TelegramLoginButton from 'react-telegram-login';
@@ -13,6 +13,7 @@ interface Store {
   _id: string;
   name: string;
   slug: string;
+  customDomain?: string;
   category?: string;
   paymentSettings?: {
     bakongId?: string;
@@ -57,8 +58,10 @@ export default function AdminSettings() {
   const setUser = useAuthStore((state) => state.setUser);
   const baseDomain = useBaseDomain();
   const t = useTranslations('AdminSettings');
+  const locale = useLocale();
+  const isKm = locale === 'km';
   
-  const [activeTab, setActiveTab] = useState<'profile' | 'store' | 'payment'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'store' | 'theme' | 'payment'>('profile');
   
   // Profile Form
   const [profileData, setProfileData] = useState({
@@ -291,10 +294,10 @@ export default function AdminSettings() {
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('settings')}</h2>
 
       {/* Tabs */}
-      <div className="flex space-x-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex space-x-2 sm:space-x-4 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar mb-6 pb-px">
         <button
           onClick={() => { setActiveTab('profile'); setSuccessMsg(''); }}
-          className={`pb-4 px-4 font-medium transition-colors border-b-2 ${
+          className={`pb-4 px-2 sm:px-4 font-medium transition-colors border-b-2 whitespace-nowrap shrink-0 text-sm sm:text-base ${
             activeTab === 'profile' 
               ? 'border-[#E84C3D] text-[#E84C3D]' 
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -304,7 +307,7 @@ export default function AdminSettings() {
         </button>
         <button
           onClick={() => { setActiveTab('store'); setSuccessMsg(''); }}
-          className={`pb-4 px-4 font-medium transition-colors border-b-2 ${
+          className={`pb-4 px-2 sm:px-4 font-medium transition-colors border-b-2 whitespace-nowrap shrink-0 text-sm sm:text-base ${
             activeTab === 'store' 
               ? 'border-[#E84C3D] text-[#E84C3D]' 
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -313,8 +316,18 @@ export default function AdminSettings() {
           {t('store_settings')}
         </button>
         <button
+          onClick={() => { setActiveTab('theme'); setSuccessMsg(''); }}
+          className={`pb-4 px-2 sm:px-4 font-medium transition-colors border-b-2 whitespace-nowrap shrink-0 text-sm sm:text-base ${
+            activeTab === 'theme' 
+              ? 'border-[#E84C3D] text-[#E84C3D]' 
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          {isKm ? 'កែច្នៃការរចនា Theme' : 'Theme Settings'}
+        </button>
+        <button
           onClick={() => { setActiveTab('payment'); setSuccessMsg(''); }}
-          className={`pb-4 px-4 font-medium transition-colors border-b-2 ${
+          className={`pb-4 px-2 sm:px-4 font-medium transition-colors border-b-2 whitespace-nowrap shrink-0 text-sm sm:text-base ${
             activeTab === 'payment' 
               ? 'border-[#E84C3D] text-[#E84C3D]' 
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -379,31 +392,44 @@ export default function AdminSettings() {
             <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('order_notifications')}</h3>
               
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-6 rounded-xl space-y-4">
-                <div className="flex items-start gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-4 sm:p-6 rounded-xl space-y-4">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
                   <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg shrink-0">
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.94z"/></svg>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Telegram Group Notifications (ការជូនដំណឹងតាម Telegram)</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Get real-time order alerts for your team by connecting a Telegram Group.<br/>
-                      <span className="font-khmer text-xs">ទទួលបានការជូនដំណឹងភ្លាមៗនៅពេលមានការបញ្ជាទិញថ្មី ដោយភ្ជាប់ទៅកាន់ Telegram Group របស់អ្នក។</span>
+                  <div className="min-w-0 flex-1 w-full">
+                    <h4 className={`font-semibold text-gray-900 dark:text-white mb-1 ${isKm ? 'font-khmer' : ''}`}>
+                      {isKm ? 'ការជូនដំណឹងតាម Telegram' : 'Telegram Group Notifications'}
+                    </h4>
+                    <p className={`text-sm text-gray-600 dark:text-gray-400 mb-4 ${isKm ? 'font-khmer leading-relaxed' : ''}`}>
+                      {isKm 
+                        ? 'ទទួលបានការជូនដំណឹងភ្លាមៗនៅពេលមានការបញ្ជាទិញថ្មី ដោយភ្ជាប់ទៅកាន់ Telegram Group របស់អ្នក។'
+                        : 'Get real-time order alerts for your team by connecting a Telegram Group.'}
                     </p>
                     
                     {storeData ? (
                       <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 dark:text-gray-300">
-                        <li>Create a Telegram Group for your store. <span className="font-khmer text-gray-500 text-xs">(បង្កើត Telegram Group សម្រាប់ហាងរបស់អ្នក)</span></li>
-                        <li>Add the bot <span className="font-mono bg-white dark:bg-black px-2 py-1 rounded text-blue-600 dark:text-blue-400">@{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'shoppingot_bot'}</span> to the group. <span className="font-khmer text-gray-500 text-xs">(បញ្ចូល bot នេះទៅក្នុង Group)</span></li>
-                        <li>Send this exact message in the group chat: <span className="font-khmer text-gray-500 text-xs">(ផ្ញើសារខាងក្រោមនេះទៅក្នុង Group៖)</span></li>
-                        <div className="flex items-center gap-2 mt-2 ml-4">
-                          <code className="bg-white dark:bg-black px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-gray-900 dark:text-gray-100 select-all">
+                        <li className={isKm ? 'font-khmer' : ''}>
+                          {isKm ? 'បង្កើត Telegram Group សម្រាប់ហាងរបស់អ្នក។' : 'Create a Telegram Group for your store.'}
+                        </li>
+                        <li className={isKm ? 'font-khmer' : ''}>
+                          {isKm ? 'បញ្ចូល bot ឈ្មោះ ' : 'Add the bot '}
+                          <span className="font-mono bg-white dark:bg-black px-2 py-1 rounded text-blue-600 dark:text-blue-400">@{process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'shoppingot_bot'}</span>
+                          {isKm ? ' ទៅក្នុង Group។' : ' to the group.'}
+                        </li>
+                        <li className={isKm ? 'font-khmer' : ''}>
+                          {isKm ? 'ផ្ញើសារខាងក្រោមនេះទៅក្នុង Group៖' : 'Send this exact message in the group chat:'}
+                        </li>
+                        <div className="flex items-center gap-2 mt-2 ml-0 sm:ml-4 overflow-hidden">
+                          <code className="bg-white dark:bg-black px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 font-mono text-gray-900 dark:text-gray-100 select-all break-all w-full text-xs sm:text-sm">
                             /link {storeData._id}
                           </code>
                         </div>
                       </ol>
                     ) : (
-                      <p className="text-sm text-yellow-600 dark:text-yellow-500">Please set up your store below first to get your pairing code.</p>
+                      <p className={`text-sm text-yellow-600 dark:text-yellow-500 ${isKm ? 'font-khmer' : ''}`}>
+                        {isKm ? 'សូមរៀបចំទម្រង់ហាងរបស់អ្នកខាងក្រោមជាមុនសិន ដើម្បីទទួលបានលេខកូដភ្ជាប់របស់អ្នក។' : 'Please set up your store below first to get your pairing code.'}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -426,32 +452,6 @@ export default function AdminSettings() {
         {activeTab === 'store' && (
           storeData ? (
             <form onSubmit={handleStoreSubmit} className="space-y-6">
-              <div className="flex items-center space-x-6">
-                <div className="shrink-0">
-                  <div className="h-24 w-24 rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-100 dark:border-gray-700">
-                    {storeData.branding?.logoUrl ? (
-                      <img src={storeData.branding.logoUrl} alt="Store Logo" className="h-full w-full object-cover" />
-                    ) : (
-                      <StoreIcon className="w-10 h-10 text-gray-400" />
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_logo')}</label>
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center space-x-4">
-                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
-                        {uploading ? t('uploading') : t('upload_logo')}
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'storeLogo')} disabled={uploading} />
-                      </label>
-                    </div>
-                    {logoUploaded && (
-                      <p className="text-xs text-green-600 dark:text-green-400">{t('image_uploaded_store')}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_name')}</label>
                 <input
@@ -486,6 +486,38 @@ export default function AdminSettings() {
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('url_warning')}</p>
               </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {isKm ? 'ឈ្មោះដែនផ្ទាល់ខ្លួន (Custom Domain)' : 'Custom Domain'}
+                  </label>
+                  <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                    {storeData.customDomain ? (
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white font-medium">
+                          {isKm ? 'ហាងរបស់អ្នកត្រូវបានភ្ជាប់ទៅកាន់៖' : 'Your store is connected to:'}
+                        </p>
+                        <a href={`http://${storeData.customDomain}`} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+                          {storeData.customDomain}
+                        </a>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {isKm 
+                            ? <span>តើអ្នកចង់បានឈ្មោះវិបសាយផ្ទាល់ខ្លួនឬទេ (ឧទាហរណ៍៖ <strong>www.yourbrand.com</strong>)?</span>
+                            : <span>Want your own custom website URL (e.g., <strong>www.yourbrand.com</strong>)?</span>
+                          }
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {isKm 
+                            ? 'សូមទំនាក់ទំនងអ្នកគ្រប់គ្រងប្រព័ន្ធដើម្បីទិញ និងភ្ជាប់ឈ្មោះដែនផ្ទាល់ខ្លួនទៅកាន់ហាងរបស់អ្នក!'
+                            : 'Contact the platform administrator to purchase and connect a custom domain to your store!'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_category')}</label>
@@ -567,38 +599,7 @@ export default function AdminSettings() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('store_branding')}</h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('store_banner')}</label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    {storeData.branding?.bannerUrl && (
-                      <div className="h-16 w-32 rounded bg-gray-200 dark:bg-gray-800 overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
-                        <img src={storeData.branding.bannerUrl} alt="Store Banner" className="h-full w-full object-cover" />
-                      </div>
-                    )}
-                    <div>
-                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap inline-block text-center w-full sm:w-auto">
-                        {uploading ? t('uploading') : t('upload_banner')}
-                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading} />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">{t('theme_customizer_title')}</h4>
-                      <p className="text-sm text-gray-500 mt-1">{t('theme_customizer_desc')}</p>
-                    </div>
-                    <Link href="/admin/settings/theme" className="w-full sm:w-auto text-center px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors whitespace-nowrap">
-                      {t('customize_theme_btn')}
-                    </Link>
-                  </div>
-                </div>
-              </div>
 
               <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center space-x-4">
                 <button
@@ -607,6 +608,89 @@ export default function AdminSettings() {
                   className="bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
                 >
                   {loading ? t('saving') : t('save_store')}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 py-8 text-center">{t('setup_store_first')}</p>
+          )
+        )}
+
+        {/* Theme Tab */}
+        {activeTab === 'theme' && (
+          storeData ? (
+            <form onSubmit={handleStoreSubmit} className="space-y-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+                {isKm ? 'ការរចនា Theme និងរូបភាព' : 'Theme & Branding'}
+              </h3>
+              
+              <div className="flex flex-col sm:flex-row gap-8">
+                {/* Logo Section */}
+                <div className="flex-1 space-y-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('store_logo')}</label>
+                  <div className="flex items-center space-x-6 bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="shrink-0">
+                      <div className="h-20 w-20 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                        {storeData.branding?.logoUrl ? (
+                          <img src={storeData.branding.logoUrl} alt="Store Logo" className="h-full w-full object-cover" />
+                        ) : (
+                          <StoreIcon className="w-8 h-8 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm w-fit">
+                        {uploading ? t('uploading') : t('upload_logo')}
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'storeLogo')} disabled={uploading} />
+                      </label>
+                      {logoUploaded && (
+                        <p className="text-xs text-green-600 dark:text-green-400">{t('image_uploaded_store')}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banner Section */}
+                <div className="flex-1 space-y-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('store_banner')}</label>
+                  <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800 space-y-4">
+                    {storeData.branding?.bannerUrl && (
+                      <div className="h-20 w-full rounded-lg bg-white dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <img src={storeData.branding.bannerUrl} alt="Store Banner" className="h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm block w-fit">
+                      {uploading ? t('uploading') : t('upload_banner')}
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+                <div className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-900/50 dark:to-[#111111] border border-gray-200 dark:border-gray-800 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-lg">{t('theme_customizer_title')}</h4>
+                    <p className="text-sm text-gray-500 mt-1">{t('theme_customizer_desc')}</p>
+                  </div>
+                  <Link href="/admin/settings/theme" className="w-full sm:w-auto text-center px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-bold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors whitespace-nowrap shadow-md">
+                    {t('customize_theme_btn')}
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading || uploading}
+                  className="bg-[#E84C3D] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save size={20} />
+                  )}
+                  {t('save_store')}
                 </button>
               </div>
             </form>

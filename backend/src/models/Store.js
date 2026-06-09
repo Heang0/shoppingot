@@ -11,6 +11,11 @@ const storeSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    customDomain: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     category: {
       type: String,
       enum: ['Clothing', 'Food & Beverage', 'Electronics', 'General Retail', 'Other', 'Supplements'],
