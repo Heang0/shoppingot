@@ -84,7 +84,9 @@ export default function StoresManagement() {
                 <tr key={store._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                     {store.name}
-                    <div className="text-xs text-gray-500 dark:text-gray-400 font-normal">{store.slug}{baseDomain}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                      {baseDomain.includes('vercel.app') ? `https://shoppingot.vercel.app/store/${store.slug}` : `http://${store.slug}${baseDomain}`}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 font-medium">
                     {store.ownerId?.name}
