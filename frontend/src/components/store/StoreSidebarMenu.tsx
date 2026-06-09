@@ -88,7 +88,7 @@ export default function StoreSidebarMenu({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[99] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[99] bg-black/40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -107,11 +107,11 @@ export default function StoreSidebarMenu({
         }`}
       >
         {/* Header */}
-        <div className="h-12 sm:h-14 flex items-center justify-between px-3 sm:px-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div className="h-14 md:h-16 flex items-center justify-between px-4 sm:px-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {storeLogo && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={storeLogo.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
+              <img src={storeLogo.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-8 md:h-9 w-auto object-contain shrink-0" />
             )}
             <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight truncate">{storeName}</span>
           </div>

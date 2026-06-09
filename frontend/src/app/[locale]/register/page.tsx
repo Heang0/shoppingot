@@ -60,10 +60,10 @@ export default function RegisterPage() {
           </Link>
         </div>
         <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Create your ShoppingOT account
+          {isKm ? "បង្កើតគណនី ShoppingOT របស់អ្នក" : "Create your ShoppingOT account"}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          Start selling with KHQR payments today
+          {isKm ? "ចាប់ផ្តើមលក់ជាមួយការទូទាត់តាមរយៈ KHQR ថ្ងៃនេះ" : "Start selling with KHQR payments today"}
         </p>
       </div>
 
@@ -77,7 +77,7 @@ export default function RegisterPage() {
             )}
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{isKm ? "ឈ្មោះពេញ" : "Full Name"}</label>
               <div className="mt-1">
                 <input
                   type="text"
@@ -90,7 +90,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{isKm ? "អ៊ីមែល" : "Email address"}</label>
               <div className="mt-1">
                 <input
                   type="email"
@@ -103,7 +103,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{isKm ? "ពាក្យសម្ងាត់" : "Password"}</label>
               <div className="mt-1">
                 <input
                   type="password"
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-[#E84C3D] hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E84C3D] disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Creating account...' : t('register')}
+                {loading ? (isKm ? 'កំពុងបង្កើតគណនី...' : 'Creating account...') : t('register')}
               </button>
             </div>
           </form>
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                 <div className="w-full border-t border-gray-200 dark:border-gray-800" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#111111] text-gray-500 dark:text-gray-400">Already have an account?</span>
+                <span className="px-2 bg-white dark:bg-[#111111] text-gray-500 dark:text-gray-400">{isKm ? "មានគណនីរួចហើយ?" : "Already have an account?"}</span>
               </div>
             </div>
 

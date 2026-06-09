@@ -98,6 +98,43 @@ export const deletePromoCode = async (req, res) => {
   }
 };
 
+// @desc    Update promo code
+// @route   PUT /api/promos/:id
+// @access  Private (Store Admin)
+export const updatePromoCode = async (req, res) => {
+  try {
+    const promo = await PromoCode.findById(req.params.id);
+    if (!promo) return res.status(404).json({ message: 'Promo not found' });
+
+    // Verify admin owns this store
+    const store = await Store.findOne({ _id: promo.storeId, ownerId: req.user._id });
+    if (!store && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const { code, discountType, discountValue, minPurchase, usageLimit, validUntil } = req.body;
+
+    if (code && code.toUpperCase() !== promo.code) {
+      const promoExists = await PromoCode.findOne({ storeId: promo.storeId, code: code.toUpperCase() });
+      if (promoExists) {
+        return res.status(400).json({ message: 'Promo code already exists for this store' });
+      }
+      promo.code = code.toUpperCase();
+    }
+
+    if (discountType) promo.discountType = discountType;
+    if (discountValue !== undefined) promo.discountValue = discountValue;
+    if (minPurchase !== undefined) promo.minPurchase = minPurchase;
+    if (usageLimit !== undefined) promo.usageLimit = usageLimit;
+    if (validUntil !== undefined) promo.validUntil = validUntil;
+
+    const updatedPromo = await promo.save();
+    res.json(updatedPromo);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Validate a promo code for checkout
 // @route   POST /api/promos/validate
 // @access  Public

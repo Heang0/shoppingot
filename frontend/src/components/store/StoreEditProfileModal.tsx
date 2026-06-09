@@ -76,7 +76,7 @@ export default function StoreEditProfileModal({ isOpen, onClose, primaryColor, t
   }`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
       <div className={`w-full max-w-md bg-white dark:bg-[#111111] ${
         themeStyle === 'neo-brutalism' 
           ? 'border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none' 

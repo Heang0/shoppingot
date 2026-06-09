@@ -134,7 +134,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         <Link href={homeHref} className="flex-1 flex justify-start items-center gap-2 md:hidden overflow-hidden">
           {logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
+            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-8 md:h-9 w-auto object-contain shrink-0" />
           )}
           <span className="text-base font-bold text-gray-900 dark:text-white tracking-tight truncate">
             {storeName}
@@ -174,7 +174,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
         <Link href={homeHref} className="hidden md:flex items-center gap-2 shrink-0 mr-8">
           {logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-7 w-auto object-contain shrink-0" />
+            <img src={logoUrl.replace('/upload/', '/upload/w_200,c_limit,q_auto/')} alt={storeName} className="h-8 md:h-9 w-auto object-contain shrink-0" />
           )}
           <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
             {storeName}
@@ -307,7 +307,7 @@ export default function StoreTopNav({ storeName, storeLogo, primaryColor, slug, 
       isOpen={isSidebarOpen}
       onClose={() => setIsSidebarOpen(false)}
       storeName={storeName}
-      storeLogo={storeLogo}
+      storeLogo={logoUrl}
       primaryColor={primaryColor}
       locale={locale}
       slug={slug}

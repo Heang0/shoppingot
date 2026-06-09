@@ -12,6 +12,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
 
   // Form State
   const [code, setCode] = useState('');
@@ -68,8 +69,14 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/promos`, {
-        method: 'POST',
+      const url = editingPromoId 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/promos/${editingPromoId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/promos`;
+      
+      const method = editingPromoId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user?.token}`
@@ -88,7 +95,11 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      setPromos([data, ...promos]);
+      if (editingPromoId) {
+        setPromos(promos.map(p => p._id === editingPromoId ? data : p));
+      } else {
+        setPromos([data, ...promos]);
+      }
       setShowModal(false);
       resetForm();
     } catch (err: any) {
@@ -133,26 +144,38 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
     setUsageLimit('');
     setValidUntil('');
     setError('');
+    setEditingPromoId(null);
+  };
+
+  const handleEditPromo = (promo: any) => {
+    setEditingPromoId(promo._id);
+    setCode(promo.code);
+    setDiscountType(promo.discountType);
+    setDiscountValue(promo.discountValue.toString());
+    setMinPurchase(promo.minPurchase > 0 ? promo.minPurchase.toString() : '');
+    setUsageLimit(promo.usageLimit ? promo.usageLimit.toString() : '');
+    setValidUntil(promo.validUntil ? new Date(promo.validUntil).toISOString().split('T')[0] : '');
+    setShowModal(true);
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{isKm ? 'លេខកូដបញ្ចុះតម្លៃ' : 'Promo Codes'}</h1>
           <p className="text-sm text-gray-500">{isKm ? 'បង្កើតលេខកូដបញ្ចុះតម្លៃសម្រាប់អតិថិជនរបស់អ្នក។' : 'Create discount codes for your customers.'}</p>
         </div>
         <button 
-          onClick={() => setShowModal(true)}
-          className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 flex items-center gap-2"
+          onClick={() => { resetForm(); setShowModal(true); }}
+          className="w-full sm:w-auto justify-center bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 flex items-center gap-2"
         >
           <Plus size={16} /> {isKm ? 'បង្កើតលេខកូដថ្មី' : 'New Promo Code'}
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#111111] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="bg-white dark:bg-[#111111] rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
@@ -199,9 +222,14 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
                   {promo.validUntil ? format(new Date(promo.validUntil), 'MMM dd, yyyy') : (isKm ? 'មិនផុតកំណត់' : 'No Expiry')}
                 </td>
                 <td className="p-4 text-right">
-                  <button onClick={() => deletePromo(promo._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => handleEditPromo(promo)} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => deletePromo(promo._id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -210,10 +238,10 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white dark:bg-[#111111] w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold">{isKm ? 'បង្កើតលេខកូដថ្មី' : 'Create Promo Code'}</h2>
+              <h2 className="text-xl font-bold">{editingPromoId ? (isKm ? 'កែប្រែលេខកូដ' : 'Update Promo Code') : (isKm ? 'បង្កើតលេខកូដថ្មី' : 'Create Promo Code')}</h2>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-900 dark:hover:text-white"><XCircle size={20} /></button>
             </div>
             
@@ -256,7 +284,7 @@ export default function AdminPromotionsPage({ params }: { params: { locale: stri
               </div>
 
               <button type="submit" className="w-full py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg font-bold hover:opacity-90 mt-4">
-                {isKm ? 'បង្កើតលេខកូដ' : 'Create Code'}
+                {editingPromoId ? (isKm ? 'រក្សាទុក' : 'Save Changes') : (isKm ? 'បង្កើតលេខកូដ' : 'Create Code')}
               </button>
             </form>
           </div>

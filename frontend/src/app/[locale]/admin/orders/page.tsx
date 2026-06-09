@@ -65,7 +65,7 @@ export default function OrderTracking() {
       {loading ? (
         <p className="text-gray-500 dark:text-gray-400">{t('loading')}</p>
       ) : (
-        <div className="bg-white dark:bg-[#111111] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="bg-white dark:bg-[#111111] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-900/50">
               <tr>
@@ -165,11 +165,11 @@ export default function OrderTracking() {
 
       {/* Order Details Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#111111] rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative animate-in fade-in zoom-in-95 duration-200">
-            <div className="sticky top-0 bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center z-10">
+            <div className="sticky top-0 bg-white/90 dark:bg-[#111111]/90 backdrop-blur-md px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 z-10 pr-14 sm:pr-16 relative">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('order_details')}</h3>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
                 <button 
                   onClick={() => window.print()}
                   className="bg-[#E84C3D] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
@@ -182,21 +182,25 @@ export default function OrderTracking() {
                     const storeSlug = selectedOrder?.storeId?.slug || 'unknown';
                     const link = `${window.location.origin}/${locale}/store/${storeSlug}/orders/${selectedOrder._id}`;
                     navigator.clipboard.writeText(link);
-                    alert(t('link_copied') || 'Tracking link copied to clipboard!');
+                    try {
+                      alert(t('link_copied'));
+                    } catch (e) {
+                      alert(locale === 'km' ? 'បានចម្លងតំណភ្ជាប់!' : 'Tracking link copied to clipboard!');
+                    }
                   }}
                   className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                   Share Link
                 </button>
-                <button onClick={() => setSelectedOrder(null)} className="text-gray-500 hover:text-black dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 rounded-full p-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
               </div>
+              <button onClick={() => setSelectedOrder(null)} className="absolute top-4 right-4 sm:right-6 text-gray-500 hover:text-black dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 rounded-full p-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
             <div className="p-6 space-y-6">
               {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">{t('customer_info')}</h4>
                   {selectedOrder.isGuest ? (
@@ -207,7 +211,9 @@ export default function OrderTracking() {
                   ) : (
                     <div className="text-sm space-y-1">
                       <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.guestInfo?.name || selectedOrder.customerId?.name}</p>
-                      <p className="text-gray-600 dark:text-gray-400 font-mono">{selectedOrder.guestInfo?.phone}</p>
+                      {selectedOrder.guestInfo?.phone && selectedOrder.guestInfo?.phone !== selectedOrder.customerId?.email && (
+                        <p className="text-gray-600 dark:text-gray-400 font-mono">{selectedOrder.guestInfo?.phone}</p>
+                      )}
                       <p className="text-gray-500 dark:text-gray-500 text-xs">{selectedOrder.customerId?.email}</p>
                     </div>
                   )}

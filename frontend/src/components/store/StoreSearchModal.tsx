@@ -63,7 +63,7 @@ export default function StoreSearchModal({ isOpen, onClose, slug, locale, primar
     : products;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-24 px-4 pb-4 animate-in fade-in duration-200" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] bg-black/60 flex items-start justify-center pt-16 sm:pt-24 px-4 pb-4 animate-in fade-in duration-200" onClick={onClose}>
       <div 
         className="w-full max-w-2xl bg-white dark:bg-[#111111] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-top-4 duration-300"
         onClick={(e) => e.stopPropagation()}

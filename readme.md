@@ -14,7 +14,7 @@ why i slect categoreis but why when i save Custom Category it is still empty
 
 
 git add .
-git commit -m "new ui for customer"
+git commit -m "New Update"
 git push
 
 

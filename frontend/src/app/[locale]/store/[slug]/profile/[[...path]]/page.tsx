@@ -653,7 +653,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                     </thead>
                     <tbody>
                       {orders.map((order, index) => (
-                        <tr key={order._id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <tr key={`${order._id}-${index}`} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                           <td className="py-4 px-4 text-sm text-gray-900 dark:text-white">{index + 1}</td>
                           <td className="py-4 px-4 text-sm text-blue-600 dark:text-blue-400 font-semibold cursor-pointer hover:underline" onClick={() => handleSelectOrder(order)}>
                             {order._id.substring(0, 10).toUpperCase()}
@@ -692,7 +692,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                 {/* Mobile Card View */}
                 <div className="lg:hidden p-4 space-y-4">
                   {orders.map((order, index) => (
-                    <div key={order._id} className="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden">
+                    <div key={`${order._id}-${index}`} className="bg-white dark:bg-[#1a1a1a] p-5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-gray-500">#{index + 1}</span>
@@ -766,8 +766,8 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {user?.addresses && user.addresses.length > 0 ? user.addresses.map((addr: any) => (
-              <div key={addr._id} className={`p-5 relative ${themeStyle === 'neo-brutalism'
+            {user?.addresses && user.addresses.length > 0 ? user.addresses.map((addr: any, idx: number) => (
+              <div key={`${addr._id}-${idx}`} className={`p-5 relative ${themeStyle === 'neo-brutalism'
                   ? `border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white dark:bg-[#111111] ${addr.isDefault ? 'border-blue-500 shadow-[4px_4px_0px_0px_rgba(59,130,246,1)]' : ''}`
                   : `rounded-2xl border ${addr.isDefault ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900'}`
                 }`}>
@@ -847,7 +847,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {user.favorites.map((product: any) => {
+              {user.favorites.map((product: any, idx: number) => {
                 // Determine if the product belongs to the current store
                 const isCurrentStore = typeof product.storeId === 'object' 
                   ? product.storeId.slug === params.slug 
@@ -856,7 +856,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                 const storeSlug = typeof product.storeId === 'object' ? product.storeId.slug : params.slug;
 
                 return (
-                  <div key={product._id} className="relative group">
+                  <div key={`${product._id}-${idx}`} className="relative group">
                     <Link href={isCurrentStore ? `/${params.locale}/product/${product.slug || product._id}` : `/${params.locale}/store/${storeSlug}/product/${product.slug || product._id}`} className={`block bg-white dark:bg-[#161616] rounded-2xl overflow-hidden transition-all ${themeStyle === 'neo-brutalism' ? 'border-[3px] border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md hover:-translate-y-1'}`}>
                       <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
                         {product.imageUrl ? (
@@ -897,7 +897,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
       />
 
       {isAddressModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
           <div className={`w-full max-w-lg bg-white dark:bg-[#111111] my-8 ${themeStyle === 'neo-brutalism'
               ? 'border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]'
               : 'rounded-3xl shadow-xl'
@@ -955,10 +955,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                     setTempCommune(null);
                   }}
                   placeholder={params.locale === 'km' ? 'ជ្រើសរើសខេត្ត ក្រុង' : 'Select Province'}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-                  styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                  className="text-sm text-black"
                 />
               </div>
 
@@ -973,10 +970,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                       setTempCommune(null);
                     }}
                     placeholder={params.locale === 'km' ? 'ជ្រើសរើសស្រុក ខណ្ឌ' : 'Select District'}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                    className="text-sm text-black"
                   />
                 </div>
               )}
@@ -989,10 +983,7 @@ export default function StoreProfilePage({ params }: { params: { slug: string, l
                     value={tempCommune}
                     onChange={setTempCommune}
                     placeholder={params.locale === 'km' ? 'ជ្រើសរើសឃុំ សង្កាត់' : 'Select Commune'}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                    className="text-sm text-black"
                   />
                 </div>
               )}

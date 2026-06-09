@@ -99,7 +99,7 @@ export function Navbar() {
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-[60] bg-black/60 md:hidden transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         ></div>
       )}

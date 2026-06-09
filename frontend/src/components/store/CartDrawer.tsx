@@ -35,7 +35,7 @@ export default function CartDrawer({
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity"
+        className="fixed inset-0 bg-black/50 z-[100] transition-opacity"
         onClick={() => setDrawerOpen(false)}
       />
 

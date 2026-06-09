@@ -61,7 +61,7 @@ export default function BakongKHQRModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] bg-black/60 flex flex-col items-center justify-center p-4">
 
       {/* Main Container */}
       <div className="relative flex flex-col items-center">
@@ -119,7 +119,7 @@ export default function BakongKHQRModal({
           {/* Overlays inside the card structure */}
 
           {showCancelConfirm && !isPaid && (
-            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-200">
+            <div className="absolute inset-0 bg-white/95 z-20 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-200">
               <h3 className="text-xl font-bold text-gray-900 mb-2" style={isKm ? khmerFont : numFont}>{text.cancelPayment}</h3>
               <p className="text-sm text-gray-500 mb-8" style={isKm ? khmerFont : numFont}>{text.cancelConfirm}</p>
               <div className="flex w-full gap-3">

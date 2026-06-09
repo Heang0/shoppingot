@@ -143,26 +143,26 @@ export default function AdminCategories() {
         )}
         <form onSubmit={handleCreateCategory} className="mb-8">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('create_new')}</label>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <input
               type="text"
               required
               placeholder="Name (EN)"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+              className="flex-1 w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
             />
             <input
               type="text"
               placeholder="ឈ្មោះ (KM)"
               value={newCategoryNameKm}
               onChange={(e) => setNewCategoryNameKm(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+              className="flex-1 w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
             />
             <button
               type="submit"
               disabled={submitting || !newCategoryName.trim()}
-              className="bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+              className="w-full sm:w-auto bg-[#E84C3D] text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
             >
               <Plus size={20} />
               {submitting ? t('adding') : t('add')}
@@ -190,13 +190,13 @@ export default function AdminCategories() {
                       <Tag size={20} />
                     </div>
                     {editingCategory?._id === category._id ? (
-                      <div className="flex-1 flex gap-2 max-w-sm">
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2 max-w-sm">
                         <input
                           type="text"
                           placeholder="Name (EN)"
                           value={editCategoryName}
                           onChange={(e) => setEditCategoryName(e.target.value)}
-                          className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                          className="flex-1 w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
                           autoFocus
                         />
                         <input
@@ -204,22 +204,24 @@ export default function AdminCategories() {
                           placeholder="ឈ្មោះ (KM)"
                           value={editCategoryNameKm}
                           onChange={(e) => setEditCategoryNameKm(e.target.value)}
-                          className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
+                          className="flex-1 w-full px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#111111] text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] outline-none"
                         />
-                        <button
-                          onClick={() => handleUpdateCategory(category._id)}
-                          className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
-                          title={t('save')}
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button
-                          onClick={() => setEditingCategory(null)}
-                          className="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-md transition-colors"
-                          title={t('cancel')}
-                        >
-                          <X size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleUpdateCategory(category._id)}
+                            className="flex-1 sm:flex-none p-1.5 flex items-center justify-center text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors border border-green-200 dark:border-green-800 sm:border-transparent"
+                            title={t('save')}
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button
+                            onClick={() => setEditingCategory(null)}
+                            className="flex-1 sm:flex-none p-1.5 flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-md transition-colors border border-gray-200 dark:border-gray-700 sm:border-transparent"
+                            title={t('cancel')}
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div>

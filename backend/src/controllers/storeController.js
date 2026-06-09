@@ -184,7 +184,7 @@ const getStoreCustomers = async (req, res) => {
     }
 
     // Aggregate orders to get unique customers
-    const orders = await Order.find({ storeId: req.params.id }).populate('customerId', 'name email phone profilePic createdAt');
+    const orders = await Order.find({ storeId: req.params.id, paymentStatus: 'PAID' }).populate('customerId', 'name email phone profilePic createdAt');
     
     const customerMap = new Map();
 

@@ -84,3 +84,19 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Force React Select to inherit fonts */
+.react-select-container, 
+.react-select__control, 
+.react-select__menu, 
+.react-select__option, 
+.react-select__single-value, 
+.react-select__placeholder, 
+.react-select__input {
+  font-family: inherit !important;
+}
+
+/* For React Select Menu Portals appended to body */
+body:has(.lang-km) .react-select__menu {
+  font-family: var(--font-kantumruy), 'Kantumruy Pro', sans-serif !important;
+}

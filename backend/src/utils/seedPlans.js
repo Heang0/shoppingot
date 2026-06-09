@@ -17,7 +17,7 @@ const seedPlans = async () => {
         nameKm: 'ឥតគិតថ្លៃ',
         price: 0,
         durationDays: 30,
-        maxProducts: 20,
+        maxProducts: 50,
         maxOrders: 50,
         hasAnalytics: false,
         hasCustomDomain: false,
@@ -26,7 +26,7 @@ const seedPlans = async () => {
       {
         name: 'Pro',
         nameKm: 'ប្រូ',
-        price: 5.99,
+        price: 9.99,
         durationDays: 30,
         maxProducts: 500,
         maxOrders: 1000,
@@ -37,7 +37,7 @@ const seedPlans = async () => {
       {
         name: 'Premium',
         nameKm: 'ព្រីមៀម',
-        price: 15.99,
+        price: 29.99,
         durationDays: 30,
         maxProducts: 99999,
         maxOrders: 99999,

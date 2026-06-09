@@ -435,7 +435,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
             {user ? (
               <div className="space-y-4">
-                {user?.addresses && user.addresses.length > 0 && (
+                {user?.addresses && user.addresses.length > 1 && (
                   <div className="mb-4">
                     <label className="block text-sm font-bold text-gray-900 dark:text-gray-300 mb-2">{isKm ? 'ជ្រើសរើសអាសយដ្ឋាន' : 'Select Address'}</label>
                     <select 
@@ -618,7 +618,7 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
 
       {/* Change Address Modal */}
       {isAddressModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
           <div className={`w-full max-w-md bg-white dark:bg-[#111111] p-6 ${themeStyle === 'neo-brutalism'
             ? 'border-[3px] border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none'
             : 'rounded-2xl shadow-xl'
