@@ -17,6 +17,8 @@ const getStores = async (req, res) => {
   }
 };
 
+import SubscriptionPlan from '../models/SubscriptionPlan.js';
+
 // @desc    Create a store (Store Admin setup)
 // @route   POST /api/stores
 // @access  Private
@@ -30,12 +32,27 @@ const createStore = async (req, res) => {
       return res.status(400).json({ message: 'Store slug already exists' });
     }
 
+    // Automatically assign the Free Plan if it exists
+    const freePlan = await SubscriptionPlan.findOne({ price: 0 });
+    let planData = undefined;
+
+    if (freePlan) {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + freePlan.durationDays);
+      planData = {
+        planId: freePlan._id,
+        expiresAt: expiryDate,
+        isActive: true,
+      };
+    }
+
     const store = new Store({
       name,
       slug,
       category: category || 'General Retail',
       ownerId: req.user._id,
       branding,
+      plan: planData,
     });
 
     const createdStore = await store.save();
