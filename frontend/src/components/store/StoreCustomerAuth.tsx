@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useCustomerAuthStore } from '@/lib/store/useCustomerAuthStore';
+// @ts-ignore
 import TelegramLoginButton from 'react-telegram-login';
 
 export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { primaryColor: string, themeStyle: string, isKm: boolean }) {
@@ -124,7 +125,7 @@ export default function StoreCustomerAuth({ primaryColor, themeStyle, isKm }: { 
         <div className="flex justify-center w-full">
           <TelegramLoginButton 
             dataOnauth={handleTelegramResponse} 
-            botName={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "shoppingot_test_bot"} 
+            botName={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "shoppingot_bot"} 
             buttonSize="large" 
             cornerRadius={12}
             usePic={true}
