@@ -17,16 +17,30 @@ const generateUniqueSlug = async (title, ProductModel) => {
 // @access  Public
 const getProductsByStore = async (req, res) => {
   try {
+    const hasPage = !!req.query.page;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || (hasPage ? 10 : 1000);
     const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const categoryId = req.query.categoryId || '';
 
-    const products = await Product.find({ storeId: req.params.storeId })
+    const filter = { storeId: req.params.storeId };
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { titleKm: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (categoryId) {
+      filter.category = categoryId;
+    }
+
+    const products = await Product.find(filter)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
       
-    const total = await Product.countDocuments({ storeId: req.params.storeId });
+    const total = await Product.countDocuments(filter);
 
     res.json({
       products,

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { X, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -60,7 +59,7 @@ export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
       <div className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-white dark:bg-[#111111] border-r border-gray-200 dark:border-gray-800
-        flex flex-col transform transition-transform duration-300 ease-in-out
+        flex flex-col transform transition-transform duration-100 ease-out will-change-transform
         ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
         {/* Logo / Title Area */}
@@ -83,7 +82,7 @@ export function Sidebar({ items, title, isOpen, onClose }: SidebarProps) {
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {items.map((item) => {
-            const isActive = pathname === item.href || pathname === `/en${item.href}` || pathname === `/km${item.href}`;
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}

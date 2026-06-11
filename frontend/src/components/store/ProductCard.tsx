@@ -106,6 +106,8 @@ export default function ProductCard({
           src={product.imageUrl?.replace('/upload/', '/upload/w_600,c_limit,q_auto/')} 
           alt={product.title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl" 
+          loading="lazy"
+          decoding="async"
         />
         
         {/* Badge - rendered after image so it appears on top */}

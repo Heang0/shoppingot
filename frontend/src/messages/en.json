@@ -108,6 +108,7 @@
     "store_address": "Store Address",
     "address_placeholder": "Your physical store or return address",
     "delivery_settings": "Delivery Settings",
+    "standard_delivery_fee": "Standard Delivery Fee ($)",
     "enable_free_delivery": "Enable \"Buy $... Up To Get Free Delivery\"",
     "min_purchase_free_delivery": "Minimum Purchase for Free Delivery ($)",
     "eg_50": "e.g. 50",

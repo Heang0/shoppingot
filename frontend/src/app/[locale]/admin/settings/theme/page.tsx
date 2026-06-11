@@ -92,10 +92,13 @@ export default function ThemeCustomizer() {
       <AdminToast message={t('toast_success')} visible={toastVisible} />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
-          <Link href="/admin/settings" className="text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm md:text-base whitespace-nowrap">&larr; {t('back_settings')}</Link>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Palette className="w-6 h-6 md:w-8 md:h-8 text-[#E84C3D]" />
+        <div className="flex items-center gap-3 md:gap-4">
+          <Link href="/admin/settings" className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 px-3 py-2 md:px-4 md:py-2 rounded-xl">
+            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span className="hidden sm:inline">{t('back_settings')}</span>
+          </Link>
+          <h2 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Palette className="w-5 h-5 md:w-8 md:h-8 text-[#E84C3D]" />
             {t('title')}
           </h2>
         </div>

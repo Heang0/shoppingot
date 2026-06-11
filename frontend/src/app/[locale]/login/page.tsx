@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/useAuthStore';
-import Link from 'next/link';
+import { Link, useRouter } from '@/navigation';
 
 export default function LoginPage() {
   const t = useTranslations('Index');

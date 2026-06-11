@@ -3,8 +3,8 @@
 import { useTheme } from "next-themes";
 import { Menu, Moon, Sun, Globe, User as UserIcon, LogOut, Settings as SettingsIcon, ChevronDown } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Link, useRouter } from "@/navigation";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useLocale } from "next-intl";
 

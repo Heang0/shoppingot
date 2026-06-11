@@ -92,7 +92,14 @@ export default function CheckoutPage({ params }: { params: { slug: string, local
   const totalProduct = getTotalPrice();
 
   const currentDeliveryFee = useMemo(() => {
-    let fee = deliveryOptions.find(d => d.id === deliveryPartner)?.fee || 0;
+    let fee = store?.deliverySettings?.standardDeliveryFee || 0;
+    
+    // Override if a specific partner has an extra fee defined in the future
+    const partnerFee = deliveryOptions.find(d => d.id === deliveryPartner)?.fee;
+    if (partnerFee && partnerFee > 0) {
+      fee = partnerFee;
+    }
+
     if (store?.deliverySettings?.isFreeDeliveryEnabled && store?.deliverySettings?.freeDeliveryThreshold > 0) {
       if (totalProduct >= store.deliverySettings.freeDeliveryThreshold) {
         fee = 0;

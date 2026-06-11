@@ -1,11 +1,42 @@
 import StoreBottomNav from '@/components/store/StoreBottomNav';
 import StoreTopNav from '@/components/store/StoreTopNav';
 import CartDrawer from '@/components/store/CartDrawer';
+import { Metadata } from 'next';
 
 async function getStore(slug: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${slug}`, { next: { revalidate: 60 } });
   if (!res.ok) return null;
   return res.json();
+}
+
+export async function generateMetadata({
+  params: { slug, locale }
+}: {
+  params: { slug: string; locale: string };
+}): Promise<Metadata> {
+  const store = await getStore(slug);
+  if (!store) {
+    return {
+      title: 'Store Not Found',
+    };
+  }
+
+  const description = locale === 'km'
+    ? `ទិញទំនិញអនឡាញនៅហាង ${store.name}។ ស្វែងរកទំនិញដែលមានគុណភាពជាច្រើនប្រភេទ។`
+    : `Shop online at ${store.name}. Discover a wide collection of quality products.`;
+
+  return {
+    title: {
+      default: store.name,
+      template: `%s | ${store.name}`,
+    },
+    description: description,
+    openGraph: {
+      title: store.name,
+      description: description,
+      images: store.branding?.logoUrl ? [{ url: store.branding.logoUrl }] : [],
+    },
+  };
 }
 
 export default async function StorefrontLayout({
@@ -16,6 +47,7 @@ export default async function StorefrontLayout({
   params: { slug: string; locale: string };
 }) {
   const store = await getStore(slug);
+
 
   if (!store) {
     return (

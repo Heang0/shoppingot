@@ -7,8 +7,11 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 
 let bot = null;
 
+// Only enable polling in production to prevent conflicts with local development
+const shouldPoll = process.env.NODE_ENV === 'production' || process.env.ENABLE_TELEGRAM_POLLING === 'true';
+
 if (token) {
-  bot = new TelegramBot(token, { polling: true });
+  bot = new TelegramBot(token, { polling: shouldPoll });
 
   bot.onText(/^\/link\s+(.+)/, async (msg, match) => {
     const chatId = msg.chat.id;

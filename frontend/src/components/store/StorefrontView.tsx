@@ -25,7 +25,21 @@ function AddToCartToast({ message, visible }: { message: string; visible: boolea
 const storeCache: Record<string, any> = {};
 
 // --- Shared Storefront View ---
-export default function StorefrontView({ params, categorySlug, viewMode = 'home' }: { params: { locale: string; slug: string }, categorySlug?: string, viewMode?: 'home' | 'catalog' | 'promotions' | 'categories' }) {
+export default function StorefrontView({ 
+  params, 
+  categorySlug, 
+  viewMode = 'home',
+  initialProducts,
+  initialCategories,
+  initialStore
+}: { 
+  params: { locale: string; slug: string }, 
+  categorySlug?: string, 
+  viewMode?: 'home' | 'catalog' | 'promotions' | 'categories',
+  initialProducts?: any[],
+  initialCategories?: any[],
+  initialStore?: any
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const previewTheme = searchParams.get('theme');
@@ -34,14 +48,14 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
   const cacheKey = `${params.slug}-${previewTheme || ''}-${previewColor || ''}`;
   const cached = storeCache[cacheKey];
 
-  const [products, setProducts] = useState<any[]>(cached?.products || []);
-  const [categories, setCategories] = useState<any[]>(cached?.categories || []);
+  const [products, setProducts] = useState<any[]>(initialProducts || cached?.products || []);
+  const [categories, setCategories] = useState<any[]>(initialCategories || cached?.categories || []);
   // We determine active category by the slug, or 'All'
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>(categorySlug || 'All');
-  const [loading, setLoading] = useState(!cached);
-  const [primaryColor, setPrimaryColor] = useState<string>(previewColor || cached?.primaryColor || '#000000');
-  const [themeStyle, setThemeStyle] = useState<string>(previewTheme || cached?.themeStyle || 'default');
-  const [bannerUrl, setBannerUrl] = useState<string | null>(cached?.bannerUrl || null);
+  const [loading, setLoading] = useState(!initialProducts && !cached);
+  const [primaryColor, setPrimaryColor] = useState<string>(previewColor || initialStore?.branding?.primaryColor || cached?.primaryColor || '#000000');
+  const [themeStyle, setThemeStyle] = useState<string>(previewTheme || initialStore?.branding?.themeStyle || cached?.themeStyle || 'default');
+  const [bannerUrl, setBannerUrl] = useState<string | null>(initialStore?.branding?.bannerUrl || cached?.bannerUrl || null);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const allLabel = params.locale === 'km' ? 'ទាំងអស់' : 'All';
   const isKm = params.locale === 'km';
@@ -51,6 +65,23 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
   }, [categorySlug]);
 
   useEffect(() => {
+    if (initialProducts && initialCategories && initialStore && !storeCache[cacheKey]) {
+      storeCache[cacheKey] = {
+        products: initialProducts,
+        categories: initialCategories,
+        primaryColor: initialStore.branding?.primaryColor || '#000000',
+        themeStyle: initialStore.branding?.themeStyle || 'default',
+        bannerUrl: initialStore.branding?.bannerUrl || null
+      };
+    }
+  }, [initialProducts, initialCategories, initialStore, cacheKey]);
+
+  useEffect(() => {
+    if (initialProducts && initialCategories && initialStore) {
+      setLoading(false);
+      return;
+    }
+
     const loadProducts = async () => {
       try {
         const storeRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores/${params.slug}`);
@@ -65,7 +96,8 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
         setThemeStyle(tStyle);
         setBannerUrl(bUrl);
 
-        const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${store._id}`);
+        // Fetch up to 1000 items to cover the storefront list properly
+        const prodRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${store._id}?limit=1000`);
         const prods = await prodRes.json();
         const loadedProducts = prods.products || [];
         setProducts(loadedProducts);
@@ -91,7 +123,7 @@ export default function StorefrontView({ params, categorySlug, viewMode = 'home'
       }
     };
     loadProducts();
-  }, [params.slug, previewColor, previewTheme, cacheKey]);
+  }, [params.slug, previewColor, previewTheme, cacheKey, initialProducts, initialCategories, initialStore]);
 
   const showToast = useCallback((product: any) => {
     setToast({ message: `${product.title} added to cart!`, visible: true });

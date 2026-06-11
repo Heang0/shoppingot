@@ -42,11 +42,60 @@ export default function ManageProducts() {
   const [images, setImages] = useState<string[]>([]);
   const [variants, setVariants] = useState<{ name: string, options: string }[]>([]);
   const [isBestSeller, setIsBestSeller] = useState(false);
+  const [translating, setTranslating] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategoryId, setFilterCategoryId] = useState('');
+
+  const handleTranslate = async (text: string, from: string, to: string, setter: (val: string) => void, fieldId: string) => {
+    if (!text.trim()) return;
+    setTranslating(fieldId);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/translate?text=${encodeURIComponent(text)}&from=${from}&to=${to}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.translatedText) {
+        setter(data.translatedText);
+      } else {
+        console.error('Translation failed', data.message);
+      }
+    } catch (err) {
+      console.error('Translation error', err);
+    } finally {
+      setTranslating(null);
+    }
+  };
+
+  const handleTitleBlur = () => {
+    if (title.trim() && !titleKm.trim()) {
+      handleTranslate(title, 'en', 'km', setTitleKm, 'prod-title-km');
+    }
+  };
+
+  const handleTitleKmBlur = () => {
+    if (titleKm.trim() && !title.trim()) {
+      handleTranslate(titleKm, 'km', 'en', setTitle, 'prod-title-en');
+    }
+  };
+
+  const handleDescriptionBlur = () => {
+    if (description.trim() && !descriptionKm.trim()) {
+      handleTranslate(description, 'en', 'km', setDescriptionKm, 'prod-desc-km');
+    }
+  };
+
+  const handleDescriptionKmBlur = () => {
+    if (descriptionKm.trim() && !description.trim()) {
+      handleTranslate(descriptionKm, 'km', 'en', setDescription, 'prod-desc-en');
+    }
+  };
+
   const getCategoryName = (category: any) =>
     locale === 'km' && category.nameKm ? category.nameKm : category.name;
 
   useEffect(() => {
-    // 1. Get store id
+    // 1. Get store ID
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/stores`, {
       headers: { Authorization: `Bearer ${user?.token}` }
     })
@@ -56,7 +105,6 @@ export default function ManageProducts() {
         if (myStore) {
           setStoreId(myStore._id);
           if (myStore.category) setStoreCategory(myStore.category);
-          fetchProducts(myStore._id, currentPage);
         }
       })
       .catch(console.error);
@@ -72,9 +120,9 @@ export default function ManageProducts() {
       .catch(console.error);
   }, [user]);
 
-  const fetchProducts = async (sid: string, page: number = 1) => {
+  const fetchProducts = async (sid: string, page: number = 1, search: string = searchQuery, catId: string = filterCategoryId) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${sid}?page=${page}&limit=10`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products/store/${sid}?page=${page}&limit=10&search=${encodeURIComponent(search)}&categoryId=${catId}`);
       const data = await res.json();
       if (res.ok) {
         setProducts(data.products || []);
@@ -84,6 +132,16 @@ export default function ManageProducts() {
       console.error(err);
     }
   };
+
+  // 3. Fetch products reactively on pagination or filter changes
+  useEffect(() => {
+    if (storeId) {
+      const delayDebounceFn = setTimeout(() => {
+        fetchProducts(storeId, currentPage, searchQuery, filterCategoryId);
+      }, 300); // 300ms debounce
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [storeId, currentPage, searchQuery, filterCategoryId]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -307,12 +365,36 @@ export default function ManageProducts() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('product_title')} (EN)</label>
-              <input type="text" required value={title} onChange={e => setTitle(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('product_title')} (EN)</label>
+                {titleKm && (
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate(titleKm, 'km', 'en', setTitle, 'prod-title-en')}
+                    className="text-xs text-[#E84C3D] hover:underline font-semibold"
+                    disabled={translating === 'prod-title-en'}
+                  >
+                    {translating === 'prod-title-en' ? '...' : '✨ Translate from KM'}
+                  </button>
+                )}
+              </div>
+              <input type="text" required value={title} onChange={e => setTitle(e.target.value)} onBlur={handleTitleBlur} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('product_title')} (KM)</label>
-              <input type="text" value={titleKm} onChange={e => setTitleKm(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('product_title')} (KM)</label>
+                {title && (
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate(title, 'en', 'km', setTitleKm, 'prod-title-km')}
+                    className="text-xs text-[#E84C3D] hover:underline font-semibold"
+                    disabled={translating === 'prod-title-km'}
+                  >
+                    {translating === 'prod-title-km' ? '...' : '✨ បកប្រែពី EN'}
+                  </button>
+                )}
+              </div>
+              <input type="text" value={titleKm} onChange={e => setTitleKm(e.target.value)} onBlur={handleTitleKmBlur} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price')}</label>
@@ -370,12 +452,36 @@ export default function ManageProducts() {
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (EN)</label>
-              <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('description')} (EN)</label>
+                {descriptionKm && (
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate(descriptionKm, 'km', 'en', setDescription, 'prod-desc-en')}
+                    className="text-xs text-[#E84C3D] hover:underline font-semibold"
+                    disabled={translating === 'prod-desc-en'}
+                  >
+                    {translating === 'prod-desc-en' ? '...' : '✨ Translate from KM'}
+                  </button>
+                )}
+              </div>
+              <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} onBlur={handleDescriptionBlur} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
             </div>
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')} (KM)</label>
-              <textarea rows={3} value={descriptionKm} onChange={e => setDescriptionKm(e.target.value)} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('description')} (KM)</label>
+                {description && (
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate(description, 'en', 'km', setDescriptionKm, 'prod-desc-km')}
+                    className="text-xs text-[#E84C3D] hover:underline font-semibold"
+                    disabled={translating === 'prod-desc-km'}
+                  >
+                    {translating === 'prod-desc-km' ? '...' : '✨ បកប្រែពី EN'}
+                  </button>
+                )}
+              </div>
+              <textarea rows={3} value={descriptionKm} onChange={e => setDescriptionKm(e.target.value)} onBlur={handleDescriptionKmBlur} className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] dark:text-white transition-colors"></textarea>
             </div>
 
             <div className="col-span-1 md:col-span-2 border-t border-gray-100 dark:border-gray-800 pt-6 mt-2">
@@ -412,6 +518,59 @@ export default function ManageProducts() {
           </button>
         </form>
       )}
+
+      {/* Search and Category Filter Bar */}
+      <div className="bg-white dark:bg-[#111111] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:max-w-md">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input
+            type="text"
+            placeholder={locale === 'km' ? 'ស្វែងរកផលិតផល...' : 'Search products by name...'}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1); // reset page on search
+            }}
+            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] outline-none transition-colors"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              title={locale === 'km' ? 'សម្អាត' : 'Clear search'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          )}
+        </div>
+
+        <div className="w-full md:w-auto flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0">
+            {locale === 'km' ? 'តម្រងតាមប្រភេទ៖' : 'Filter by Category:'}
+          </label>
+          <select
+            value={filterCategoryId}
+            onChange={(e) => {
+              setFilterCategoryId(e.target.value);
+              setCurrentPage(1); // reset page on filter
+            }}
+            className="w-full md:w-48 px-3 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-[#E84C3D] focus:border-[#E84C3D] outline-none transition-colors"
+          >
+            <option value="">{locale === 'km' ? 'ទាំងអស់' : 'All Categories'}</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {getCategoryName(cat)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="bg-white dark:bg-[#111111] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">

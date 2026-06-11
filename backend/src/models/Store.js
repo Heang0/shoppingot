@@ -63,6 +63,7 @@ const storeSchema = new mongoose.Schema(
       address: { type: String },
     },
     deliverySettings: {
+      standardDeliveryFee: { type: Number, default: 0 },
       freeDeliveryThreshold: { type: Number, default: 0 },
       isFreeDeliveryEnabled: { type: Boolean, default: false },
     },

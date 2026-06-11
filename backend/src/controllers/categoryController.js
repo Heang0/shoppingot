@@ -1,5 +1,6 @@
 import Category from '../models/Category.js';
 import Store from '../models/Store.js';
+import Product from '../models/Product.js';
 
 export const getCategories = async (req, res) => {
   try {
@@ -115,6 +116,14 @@ export const deleteCategory = async (req, res) => {
     const store = await Store.findOne({ ownerId: req.user._id });
     if (!store || category.storeId.toString() !== store._id.toString()) {
       return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    // Check if category contains any products
+    const associatedProduct = await Product.findOne({ category: category._id });
+    if (associatedProduct) {
+      return res.status(400).json({
+        message: 'Cannot delete category because it contains products. Please remove or reassign them first. / មិនអាចលុបប្រភេទនេះបានទេ ព្រោះវាមានផលិតផលនៅក្នុងនោះ។ សូមលុប ឬផ្លាស់ប្តូរប្រភេទផលិតផលទាំងនោះជាមុនសិន។'
+      });
     }
 
     await category.deleteOne();

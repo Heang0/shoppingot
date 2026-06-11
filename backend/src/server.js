@@ -27,6 +27,7 @@ import userRoutes from './routes/userRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import promoRoutes from './routes/promoRoutes.js';
+import translateRoutes from './routes/translateRoutes.js';
 
 import path from 'path';
 
@@ -96,6 +97,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/translate', translateRoutes);
 
 app.get('/', (req, res) => {
   res.send('ShoppingOT API is running...');

@@ -20,6 +20,7 @@ interface Store {
     currency?: string;
   };
   deliverySettings?: {
+    standardDeliveryFee?: number;
     isFreeDeliveryEnabled?: boolean;
     freeDeliveryThreshold?: number;
   };
@@ -561,7 +562,25 @@ export default function AdminSettings() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('delivery_settings')}</h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {t('standard_delivery_fee') || 'Standard Delivery Fee ($)'}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={storeData.deliverySettings?.standardDeliveryFee ?? ''}
+                      onChange={(e) => setStoreData({ 
+                        ...storeData, 
+                        deliverySettings: { ...storeData.deliverySettings, standardDeliveryFee: Number(e.target.value) } 
+                      })}
+                      className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#E84C3D] bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors"
+                      placeholder="e.g. 1.50"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-6">
                     <input 
                       type="checkbox" 
                       id="freeDelivery" 
